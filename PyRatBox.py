@@ -68,6 +68,7 @@ class PyRatBox(object):
 
     '''
     # load the core descriptors
+    self.invisible=False
     self.base = np.array(base).astype(float)
     if np.array(extent).size == 3:
       self.extent = extent
@@ -85,6 +86,7 @@ class PyRatBox(object):
 
     # extent can be None
     self.empty = False
+    self.size = 0.
     try:
       if not self.extent:
         self.empty = True
@@ -93,6 +95,8 @@ class PyRatBox(object):
       if (self.extent == PyRatMinExtent).all():
         self.empty = True
         self.extent = np.zeros(3)+PyRatMinExtent
+    if not self.empty:
+      self.size = np.prod(self.extent)
 
   def error(self,msg):
     '''
@@ -295,7 +299,7 @@ class PyRatBox(object):
       closest : set True to return False if the possible
                 ray length would be greater than ray.length
     '''
-    if self.empty:
+    if self.empty or self.invisible:
       return False
     ray.tnear = PyRatBig
     ray.tfar = PyRatBig*2
