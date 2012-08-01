@@ -111,7 +111,6 @@ class PyRatBox(object):
                contents=self.__tryCopy__(self.contents),\
                material=self.__tryCopy__(self.material),info=self.info)
 
-
   def __tryCopy__(self,x):
     '''
     Try a copy or return the original
@@ -271,15 +270,16 @@ class PyRatBox(object):
     if direction >= -PyRatTol and direction <= PyRatTol:
       if origin<min or origin>max:
         return False
+      return True
     t1=(min-origin)/direction
     t2=(max-origin)/direction
     if t1>t2:
-      if t2>ray.tnear and self.intersectProjection(t2,ray,axis):
+      if t2<ray.tnear and self.intersectProjection(t2,ray,axis):
         ray.tnear=t2
       if t1<ray.tfar and self.intersectProjection(t1,ray,axis):
         ray.tfar=t1
     else:
-      if t1>ray.tnear: ray.tnear=t1
+      if t1<ray.tnear: ray.tnear=t1
       if t2<ray.tfar:  ray.tfar=t2
     if ray.tnear>ray.tfar: return False
     if ray.tfar<0.0:    return False
@@ -304,7 +304,6 @@ class PyRatBox(object):
     for i in xrange(3):
       ok[i] = self.bbox_shuffle(self.min[i],self.max[i],ray.origin[i],ray.direction[i],ray,i)
     if (np.array(ok)==True).all():
-      import pdb;pdb.set_trace()
       if ray.tnear < 0:
         ray.tnear = 0.
       if closest and ray.tnear >= ray.length:
@@ -433,13 +432,12 @@ def test(base,tip,radius,caps=True):
   if len(sys.argv) > 1:
     ncpus = int(sys.argv[1])
   else:
-    ncpus = 0
+    ncpus = -1
  
-  import pdb;pdb.set_trace()
   # tuple of all parallel python servers to connect with
-  if ncpus > 0 and isPP:
+  if ncpus != 0 and isPP:
     ppservers = ()
-    if ncpus:
+    if ncpus > 0:
       # Creates jobserver with ncpus workers
       job_server = pp.Server(ncpus, ppservers=ppservers)
     else:
@@ -459,7 +457,6 @@ def test(base,tip,radius,caps=True):
     for ix,iy,f in results:
       val = f()
       if val[0]:
-        import pdb;pdb.set_trace()
         ray = val[1]
         n = np.array([0,0,1.])
         result0[ix,iy] = np.dot(n,-ray.direction)
@@ -502,7 +499,7 @@ def main():
   '''
   min = [-0.5,-0.5,0]
   extent = [1,1,1]
-  test([-1,-1,0],[2,2,2],None)
+  test(min,extent,None)
 
 
 if __name__ == "__main__":
