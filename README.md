@@ -1,0 +1,4 @@
+PyRat
+=====
+
+Python ray tracing
