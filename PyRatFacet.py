@@ -103,11 +103,15 @@ class PyRatFacet(PyRatPlane):
                 ray length would be greater than ray.length
 
     '''
+    #import pdb;pdb.set_trace()
     if not self.rayToPlane(ray):
       return False
     if closest and ray.tnear >= ray.length:
       return False
+    length = ray.length
+    ray.length = ray.tnear 
     ray.hitPoint = self.hit(ray,ok=True)
+    ray.length = length
     r = np.arange(3)
     v = ray.hitPoint[r!=self.orientation] - self.fbase
     # local coords
@@ -126,11 +130,10 @@ def main():
   '''
   A simple test of the Facet algorithm
  
-  A scan over a trangle is made and an image produced
+  A scan over a disk is made and an image produced
   tests/PyRatFacet-near.png with the distances.
 
-  It should be 2 in the centre (since the camera is located at z=2)
-  and 1 at the lower edge
+  It should be 1 in the centre (since the camera is located at z=4)
   '''
   import sys
   import os
@@ -138,43 +141,14 @@ def main():
   from PyRatRay import PyRatRay
   import pylab as plt
 
-  # set up a test object: a facet
-  vertices = np.array([[0,0,0.],[0,1,0],[1,0,1]])
+  # set up a test object: a disk
+  from PyRatBox import test
+  vertices = np.array([[0,0,3.],[0,1,2],[1,0,4]])
+  info = {'verbose':True}
 
-  facet = PyRatFacet(vertices,None)
-
-  # ray direction
-  direction = np.array([0,0,-1])
-
-  # image size
-  size = (100,100)
-
-  # ray origins
-  origin = np.array([0,0,2]).astype(float)
-  # dimensions of the image in physical units
-  dimensions = [2,2]
-
-  result1 = np.zeros(size)
-
-  o = origin.copy()
-  ray = PyRatRay(o,direction)
-  for ix in xrange(size[0]):
-    o[0] = origin[0] + dimensions[0] * (ix-size[0]*0.5)/size[0]
-    for iy in xrange(size[1]):
-      o[1] = origin[1] + dimensions[1] * (iy-size[1]*0.5)/size[1]
-      ray.length = PyRatBig
-      if facet.intersect(ray):
-        distance = ray.tnear * ray.direction
-        result1[ix,iy] = np.sqrt(np.dot(distance,distance))
-
-  plt.imshow(result1,interpolation='nearest')
-  plt.colorbar()
-  if not os.path.exists('tests'):
-    os.makedirs('tests')
-  plt.savefig('tests/PyRatFacet-near.png')
-  plt.clf()
-
+  name = str(globals()['__file__'].split('.')[0])
+  test(vertices,None,info=info,type=name)
 
 if __name__ == "__main__":
     main()
- 
+

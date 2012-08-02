@@ -139,12 +139,12 @@ class PyRatDisk(PyRatPlane):
      
 def main():
   '''
-  A simple test of the Facet algorithm
+  A simple test of the Disk algorithm
  
   A scan over a disk is made and an image produced
   tests/PyRatDisk-near.png with the distances.
 
-  It should be 2 in the centre (since the camera is located at z=2)
+  It should be 1 in the centre (since the camera is located at z=4)
   '''
   import sys
   import os
@@ -152,44 +152,13 @@ def main():
   from PyRatRay import PyRatRay
   import pylab as plt
 
-  # set up a test object: a facet
-  base = np.array([0,0,0.])
+  # set up a test object: a disk
+  from PyRatBox import test
+  base = np.array([0,0,3.])
   normal = np.array([0,1,1.])
-  info = {'radius':1.0}
-
-  disk = PyRatDisk(base,normal,info=info)
-
-  # ray direction
-  direction = np.array([0,0,-1])
-
-  # image size
-  size = (100,100)
-
-  # ray origins
-  origin = np.array([0,0,2]).astype(float)
-  # dimensions of the image in physical units
-  dimensions = [2,2]
-
-  result1 = np.zeros(size)
-
-  o = origin.copy()
-  ray = PyRatRay(o,direction)
-  for ix in xrange(size[0]):
-    o[0] = origin[0] + dimensions[0] * (ix-size[0]*0.5)/size[0]
-    for iy in xrange(size[1]):
-      o[1] = origin[1] + dimensions[1] * (iy-size[1]*0.5)/size[1]
-      ray.length = PyRatBig
-      if disk.intersect(ray):
-        distance = ray.tnear * ray.direction
-        result1[ix,iy] = np.sqrt(np.dot(distance,distance))
-
-  plt.imshow(result1,interpolation='nearest')
-  plt.colorbar()
-  if not os.path.exists('tests'):
-    os.makedirs('tests')
-  plt.savefig('tests/PyRatDisk-near.png')
-  plt.clf()
-
+  info = {'verbose':True,'radius':1.0}
+  name = str(globals()['__file__'].split('.')[0])
+  test(base,normal,info=info,type=name)
 
 if __name__ == "__main__":
     main()

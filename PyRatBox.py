@@ -372,7 +372,7 @@ class PyRatBox(object):
     '''
     pass
 
-def test(base,tip,radius,caps=True):
+def test(base,tip,type=None,info={}):
   '''
   A simple test of the intersection algorithm
  
@@ -380,9 +380,6 @@ def test(base,tip,radius,caps=True):
   in tests with the distances.
 
   '''
-
-  import sys
-  import os
 
   from PyRatRay import PyRatRay
   import pylab as plt
@@ -395,19 +392,13 @@ def test(base,tip,radius,caps=True):
 
   import sys
   import os
-
-  from PyRatRay import PyRatRay
-
-  type = str(globals()['__file__'].split('.')[0])
-
-  exec('from %s import %s'%(type,type))
   import pylab as plt
 
-  # set up a test object
-  if radius:
-    info = {'radius':radius,'caps':caps}
-  else:
-    info = {'caps':caps}
+  type = type or str(globals()['__file__'].split('.')[0])
+  if 'verbose' in info:
+    sys.stderr.write('Object: %s\n'%type)
+
+  exec('from %s import %s'%(type,type))
 
   name = type[5:]
   obj = eval('%s(base,tip,info=info)'%type)
@@ -432,6 +423,7 @@ def test(base,tip,radius,caps=True):
   result0 = np.zeros(size)
   result1 = np.zeros(size)
   result2 = np.zeros(size)
+  sys.stderr.write('from %s in direction %s\n'%(str(origin),str(direction)))
 
   if len(sys.argv) > 1:
     ncpus = int(sys.argv[1])
@@ -451,14 +443,22 @@ def test(base,tip,radius,caps=True):
     print "Starting pp with", job_server.get_ncpus(), "workers"
 
     results = []
+    l = float(size[0])
     for ix in xrange(size[0]):
-      o[0] = origin[0] + dimensions[0] * (ix-size[0]*0.5)/size[0]
+      o[0] = origin[0] + dimensions[0] * 2.*(ix-size[0]*0.5)/size[0]
+      if 'verbose' in info and int(100.* (ix+1.)/l) % 5 == 0:
+          sys.stderr.write('\b\b\b\b\b\b\b\b%.2f%%'%(100.*(ix+1.)/l))
       for iy in xrange(size[1]):
-        o[1] = origin[1] + dimensions[1] * (iy-size[1]*0.5)/size[1]
+        o[1] = origin[1] + dimensions[1] * 2.*(iy-size[1]*0.5)/size[1]
         ray.length = PyRatBig
         f = job_server.submit(obj.intersects,(ray,))
         results.append((ix,iy,f))
-    for ix,iy,f in results:
+    if 'verbose' in info:
+      sys.stderr.write('\nGathering results\n')
+    l = size[0]*size[1]
+    for i,(ix,iy,f) in enumerate(results):
+      if 'verbose' in info and int(100.*(i+1.)/l) % 5 == 0:
+        sys.stderr.write('\b\b\b\b\b\b\b\b%.2f%%'%(100.*(i+1.)/l))
       val = f()
       if val[0]:
         ray = val[1]
@@ -467,17 +467,22 @@ def test(base,tip,radius,caps=True):
         result1[ix,iy] = ray.tnear
         result2[ix,iy] = ray.tfar
   else:
+    l = size[0]
     for ix in xrange(size[0]):
-      o[0] = origin[0] + dimensions[0] * (ix-size[0]*0.5)/size[0]
+      o[0] = origin[0] + dimensions[0] * 2.*(ix-size[0]*0.5)/size[0]
+      if 'verbose' in info and int(100.*(ix+1)/l) % 5 == 0:
+          sys.stderr.write('\b\b\b\b\b\b\b\b%.2f%%'%(100*(ix+1)/l))
       for iy in xrange(size[1]):
-        o[1] = origin[1] + dimensions[1] * (iy-size[1]*0.5)/size[1]
+        o[1] = origin[1] + dimensions[1] * 2.*(iy-size[1]*0.5)/size[1]
         ray.length = PyRatBig
         if obj.intersect(ray):
           n = np.array([0,0,1.])
           result0[ix,iy] = np.dot(n,-ray.direction)
           result1[ix,iy] = ray.tnear
           result2[ix,iy] = ray.tfar
-
+  if 'verbose' in info:
+    sys.stderr.write('\nWriting results\n')
+  plt.clf()
   plt.imshow(result0,interpolation='nearest')
   plt.colorbar()
   if not os.path.exists('tests'):
@@ -501,9 +506,10 @@ def main():
   tests/PyRatBox-near.png and tests/PyRatBox-far.png
   with the near and far distances 
   '''
-  min = [-0.5,-0.5,0]
-  extent = [1,1,1]
-  test(min,extent,None)
+  min = [-0.5,-0.5,2]
+  extent = [1,2,1]
+  info = {'verbose':True}
+  test(min,extent,info=info)
 
 
 if __name__ == "__main__":

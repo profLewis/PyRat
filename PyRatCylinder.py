@@ -195,93 +195,13 @@ def main():
   It should be close to 1 at the nearest point (since the camera is located at z=2) for the near
   intersection and 2.0 for the far.
   '''
-  import sys
-  import os
-
-  from PyRatRay import PyRatRay
-  from PyRatCylinder import PyRatCylinder
-  import pylab as plt
-
   # set up a test object: a facet
-  base = np.array([-0.5,0.,0.])
-  tip = np.array([0.5,0.,1.0])
-  info = {'radius':0.5,'caps':True}
-
-  cyl = PyRatCylinder(base,tip,info=info)
-
-  # ray direction
-  direction = np.array([0,0,-1])
-
-  # image size
-  size = (100,100)
-
-  # ray origins
-  origin = np.array([0,0,2]).astype(float)
-  o = origin.copy()
-  ray = PyRatRay(o,direction)
-
-  # dimensions of the image in physical units
-  dimensions = [2,2]
-
-  result0 = np.zeros(size)
-  result1 = np.zeros(size)
-  result2 = np.zeros(size)
-
-  # tuple of all parallel python servers to connect with
-  isPP = globals().get('pp',False)
-  if isPP:
-    ppservers = ()
-    if len(sys.argv) > 1:
-      ncpus = int(sys.argv[1])
-      # Creates jobserver with ncpus workers
-      job_server = pp.Server(ncpus, ppservers=ppservers)
-    else:
-      # Creates jobserver with automatically detected number of workers
-      job_server = pp.Server(ppservers=ppservers)
-
-    print "Starting pp with", job_server.get_ncpus(), "workers"
-    proc = cyl
-
-    results = [] 
-    for ix in xrange(size[0]):
-      o[0] = origin[0] + dimensions[0] * (ix-size[0]*0.5)/size[0]
-      for iy in xrange(size[1]):
-        o[1] = origin[1] + dimensions[1] * (iy-size[1]*0.5)/size[1]
-        ray.length = PyRatBig
-        f = job_server.submit(cyl.intersects,(ray,))
-        results.append((ix,iy,f))
-
-    for ix,iy,f in results: 
-      val = f()
-      if val[0]:
-        ray = val[1]
-        result1[ix,iy] = ray.tnear
-        result2[ix,iy] = ray.tfar
-  else:
-    for ix in xrange(size[0]):
-      o[0] = origin[0] + dimensions[0] * (ix-size[0]*0.5)/size[0]
-      for iy in xrange(size[1]):
-        o[1] = origin[1] + dimensions[1] * (iy-size[1]*0.5)/size[1]
-        ray.length = PyRatBig
-        if cyl.intersects(ray):
-          n = 0.
-          result1[ix,iy] = ray.tnear
-          result2[ix,iy] = ray.tfar
-
-  plt.imshow(results0,interpolation='nearest')
-  plt.colorbar()
-  if not os.path.exists('tests'):
-    os.makedirs('tests')
-  plt.savefig('tests/PyRatCylinder-near.png')
-  plt.clf()
-  plt.imshow(result1,interpolation='nearest')
-  plt.colorbar()
-  plt.savefig('tests/PyRatCylinder-near.png')
-  plt.clf()
-  plt.imshow(result2,interpolation='nearest')
-  plt.colorbar()
-  plt.savefig('tests/PyRatCylinder-far.png')
-
+  from PyRatBox import test
+  base = np.array([-0.5,1.,0.])
+  tip = np.array([0.,0.,3.0])
+  info = {'verbose':True,'radius':0.5,'caps':True}
+  name = str(globals()['__file__'].split('.')[0])
+  test(base,tip,info=info,type=name)
 
 if __name__ == "__main__":
     main()

@@ -99,13 +99,12 @@ class PyRatEllipsoid(PyRatPlane):
 
 def main():
   '''
-  A simple test of the Ellisoid algorithm
+  A simple test of the Ellipsoid algorithm
  
-  A scan over an ellipsoid is made and an image produced
+  A scan over a disk is made and an image produced
   tests/PyRatEllipsoid-near.png with the distances.
 
-  It should be 1 in the centre (since the camera is located at z=2) for the near
-  intersection and 2.0 for the far.
+  It should be 1 in the centre (since the camera is located at z=4)
   '''
   import sys
   import os
@@ -113,49 +112,14 @@ def main():
   from PyRatRay import PyRatRay
   import pylab as plt
 
-  # set up a test object: a facet
-  base = np.array([0,0,0.])
-  radius = np.array([0.5,1,0.5])
+  # set up a test object: a disk
+  from PyRatBox import test
+  base = np.array([0,0,1])
+  radius = np.array([0.5,1,1])
+  info = {'verbose':True}
 
-  ell = PyRatEllipsoid(base,radius)
-
-  # ray direction
-  direction = np.array([0,0,-1])
-
-  # image size
-  size = (100,100)
-
-  # ray origins
-  origin = np.array([0,0,2]).astype(float)
-  # dimensions of the image in physical units
-  dimensions = [2,2]
-
-  result1 = np.zeros(size)
-  result2 = np.zeros(size)
-
-  o = origin.copy()
-  ray = PyRatRay(o,direction)
-  for ix in xrange(size[0]):
-    o[0] = origin[0] + dimensions[0] * (ix-size[0]*0.5)/size[0]
-    for iy in xrange(size[1]):
-      o[1] = origin[1] + dimensions[1] * (iy-size[1]*0.5)/size[1]
-      ray.length = PyRatBig
-      if ell.intersect(ray):
-        distance = ray.tnear * ray.direction
-        result1[ix,iy] = np.sqrt(np.dot(distance,distance))
-        distance = ray.tfar * ray.direction
-        result2[ix,iy] = np.sqrt(np.dot(distance,distance))
-
-  plt.imshow(result1,interpolation='nearest')
-  plt.colorbar()
-  if not os.path.exists('tests'):
-    os.makedirs('tests')
-  plt.savefig('tests/PyRatEllipsoid-near.png')
-  plt.clf()
-  plt.imshow(result2,interpolation='nearest')
-  plt.colorbar()
-  plt.savefig('tests/PyRatEllipsoid-far.png')
-
+  name = str(globals()['__file__'].split('.')[0])
+  test(base,radius,info=info,type=name)
 
 if __name__ == "__main__":
     main()

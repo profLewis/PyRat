@@ -76,10 +76,10 @@ def main():
   '''
   A simple test of the Plane algorithm
  
-  A scan over a plane with normal [1,1,1] is made and an image produced
+  A scan over a Plane is made and an image produced
   tests/PyRatPlane-near.png with the distances.
 
-  It should be 10 in the centre (since the camera is located at z=10)
+  It should be 1 in the centre (since the camera is located at z=4)
   '''
   import sys
   import os
@@ -87,44 +87,14 @@ def main():
   from PyRatRay import PyRatRay
   import pylab as plt
 
-  # set up a test object: a cube
-  min = [0.,0.,0]
+  from PyRatBox import test
+  min = [0.,0.,3]
   normal = [1,1,1]
+  info = {'verbose':True}
 
-  box = PyRatPlane(min,normal)
-
-  # ray direction
-  direction = np.array([0,0,-1])
-
-  # image size
-  size = (100,100)
-
-  # ray origins
-  origin = np.array([0,0,10]).astype(float)
-  # dimensions of the image in physical units
-  dimensions = [4,4]
-
-  result1 = np.zeros(size)
-
-  o = origin.copy()
-  ray = PyRatRay(o,direction)
-  for ix in xrange(size[0]):
-    o[0] = origin[0] + dimensions[0] * (ix-size[0]*0.5)/size[0]
-    for iy in xrange(size[1]):
-      o[1] = origin[1] + dimensions[1] * (iy-size[1]*0.5)/size[1]
-      ray.length = PyRatBig
-      if box.intersect(ray):
-        distance = ray.tnear * ray.direction
-        result1[ix,iy] = np.sqrt(np.dot(distance,distance))
-
-  plt.imshow(result1,interpolation='nearest')
-  plt.colorbar()
-  if not os.path.exists('tests'):
-    os.makedirs('tests')
-  plt.savefig('tests/PyRatPlane-near.png')
-  plt.clf()
-
+  name = str(globals()['__file__'].split('.')[0])
+  test(min,normal,info=info,type=name)
 
 if __name__ == "__main__":
     main()
- 
+

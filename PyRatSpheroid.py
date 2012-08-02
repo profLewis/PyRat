@@ -12,7 +12,7 @@ class PyRatSpheroid(PyRatEllipsoid):
     '''
     Load the object:
 
-      base : vector that define the ellipsoid base (N.B. not centre)
+      base : vector that define the spheroid centre
       radius : vector (for ellipsoid) or scalar for sphere
 
       OPTIONAL:
@@ -28,17 +28,17 @@ class PyRatSpheroid(PyRatEllipsoid):
       Note the the centre of the object is stored as self.base
 
     '''
+    base[2] -= radius
     PyRatEllipsoid.__init__(self,base,radius,contents=contents,material=material,info=info)
 
 def main():
   '''
   A simple test of the Spheroid algorithm
-
-  A scan over an ellipsoid is made and an image produced
+ 
+  A scan over a Spheroid is made and an image produced
   tests/PyRatSpheroid-near.png with the distances.
 
-  It should be 1 in the centre (since the camera is located at z=2) for the near
-  intersection and 2.0 for the far.
+  It should be 1 in the centre (since the camera is located at z=4)
   '''
   import sys
   import os
@@ -46,52 +46,16 @@ def main():
   from PyRatRay import PyRatRay
   import pylab as plt
 
-  # set up a test object: a facet
-  base = np.array([0,0,0.])
-  radius = 0.5
+  from PyRatBox import test
 
-  sph = PyRatSpheroid(base,radius)
+  base = np.array([0,0,2.])
+  radius = 1.0
+  info = {'verbose':True}
 
-  # ray direction
-  direction = np.array([0,0,-1])
-
-  # image size
-  size = (100,100)
-
-  # ray origins
-  origin = np.array([0,0,2]).astype(float)
-  # dimensions of the image in physical units
-  dimensions = [2,2]
-
-  result1 = np.zeros(size)
-  result2 = np.zeros(size)
-
-  o = origin.copy()
-  ray = PyRatRay(o,direction)
-  for ix in xrange(size[0]):
-    o[0] = origin[0] + dimensions[0] * (ix-size[0]*0.5)/size[0]
-    for iy in xrange(size[1]):
-      o[1] = origin[1] + dimensions[1] * (iy-size[1]*0.5)/size[1]
-      ray.length = PyRatBig
-      if sph.intersect(ray):
-        distance = ray.tnear * ray.direction
-        result1[ix,iy] = np.sqrt(np.dot(distance,distance))
-        distance = ray.tfar * ray.direction
-        result2[ix,iy] = np.sqrt(np.dot(distance,distance))
-
-  plt.imshow(result1,interpolation='nearest')
-  plt.colorbar()
-  if not os.path.exists('tests'):
-    os.makedirs('tests')
-  plt.savefig('tests/PyRatSpheroid-near.png')
-  plt.clf()
-  plt.imshow(result2,interpolation='nearest')
-  plt.colorbar()
-  plt.savefig('tests/PyRatSpheroid-far.png')
-
+  name = str(globals()['__file__'].split('.')[0])
+  test(base,radius,info=info,type=name)
 
 if __name__ == "__main__":
     main()
-
 
 
