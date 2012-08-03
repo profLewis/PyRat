@@ -68,6 +68,8 @@ class PyRatClone(PyRatBox):
 
     and do hierarchical intersections
     '''
+    from PyRatBox import PyRatBox
+    import numpy as np
     # transform ray
     transformed_ray = ray.copy()
 
@@ -86,8 +88,6 @@ class PyRatClone(PyRatBox):
       transformed_ray.direction = np.array(np.matrix(ray.direction) * self.matrix.T).flatten()
       mod_ray_direction=np.sqrt(np.dot(transformed_ray.direction,transformed_ray.direction))
       transformed_ray.direction /= mod_ray_direction
-
-      #import pdb;pdb.set_trace()
       transformed_ray.origin = np.array(np.matrix(transformed_ray.origin) * self.matrix.T).flatten()
       # to account for scaling effects
       transformed_ray.origin /= (mod_ray_direction*mod_ray_direction)
@@ -101,6 +101,10 @@ class PyRatClone(PyRatBox):
         thisRay.object.localNormal = np.array(np.matrix(thisRay.object.localNormal) * self.matrix).flatten()
         mod = np.sqrt(np.dot(thisRay.object.localNormal,thisRay.object.localNormal))
         thisRay.object.localNormal /= mod
+      except:
+        pass
+
+      try:
         thisRay.length *= mod_ray_direction
         thisRay.origin = ray.origin
         thisRay.direction = ray.direction
@@ -141,10 +145,10 @@ def main():
 
   clone = PyRatClone(np.zeros(3),None)
   clone.thisGroup = None
-  clone.offset = np.array([0.0,0.0,-0.5])
+  clone.offset = np.array([-0.5,0.5,0.])
   clone.matrix = np.eye(3)
-  c = np.cos(45*np.pi/180.)
-  s = np.sin(45*np.pi/180.)
+  c = np.cos(30*np.pi/180.)
+  s = np.sin(30*np.pi/180.)
   clone.matrix[1,1] = clone.matrix[0,0] = c
   clone.matrix[0,1] = -s
   clone.matrix[1,0] = s
@@ -152,7 +156,7 @@ def main():
   clone.contents = [box,sph,ell]
 
   name = str(globals()['__file__'].split('.')[0])  
-  test(min,extent,obj=clone,info=info,type=name)
+  test(min,extent,obj=clone,info=info,type=name,nAtTime=100*100/20)
 
 
 if __name__ == "__main__":

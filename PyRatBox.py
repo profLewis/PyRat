@@ -350,6 +350,16 @@ class PyRatBox(object):
       return True
     return False      
 
+  def intersectsMany(self,rays,closest=True):
+    '''
+    Call intersects for multiple rays
+    '''
+    result = []
+    for ray in rays:
+      result.append(self.intersects(ray,closest=closest))
+    return result
+
+
   def intersects(self,ray,closest=True):
     '''
     Call intersect but return ray as well
@@ -359,7 +369,6 @@ class PyRatBox(object):
       if not i.invisible:
         thisHit,thisRay = i.intersects(ray.copy(),closest=True)
         if thisHit and thisRay.tnear < ray.length:
-          #import pdb;pdb.set_trace()
           ray = thisRay
           ray.length = thisRay.tnear
           hit = thisHit
@@ -426,7 +435,7 @@ class PyRatBox(object):
     '''
     pass
 
-def test(base,tip,obj=None,type=None,info={}):
+def test(base,tip,obj=None,type=None,info={},nAtTime=200):
   '''
   A simple test of the intersection algorithm
  
@@ -496,31 +505,50 @@ def test(base,tip,obj=None,type=None,info={}):
 
     print "Starting pp with", job_server.get_ncpus(), "workers"
 
-    results = []
+    sims = []
     l = float(size[0])
+    index = []
     for ix in xrange(size[0]):
       o[0] = origin[0] + dimensions[0] * 2.*(ix-size[0]*0.5)/size[0]
-      if 'verbose' in info and int(100.* (ix+1.)/l) % 5 == 0:
-          sys.stderr.write('\b\b\b\b\b\b\b\b%.2f%%'%(100.*(ix+1.)/l))
       for iy in xrange(size[1]):
         o[1] = origin[1] + dimensions[1] * 2.*(iy-size[1]*0.5)/size[1]
         ray.length = PyRatBig
-        f = job_server.submit(obj.intersects,(ray,))
-        results.append((ix,iy,f))
+        index.append((ix,iy))
+        sims.append(ray.copy())
+
+    sims = np.array(sims)
+    index = np.array(index)
+    results = []
+    for i in xrange(0,len(sims),nAtTime):
+      try:
+        f = job_server.submit(obj.intersectsMany,(sims[i:i+nAtTime],))  
+        j = index[i:i+nAtTime]
+      except:
+        f = job_server.submit(obj.intersectsMany,(sims[i:],))
+        j = index[i:]
+      results.append([j[:,0],j[:,1],f])
+
     if 'verbose' in info:
       sys.stderr.write('\nGathering results\n')
     l = size[0]*size[1]
-    for i,(ix,iy,f) in enumerate(results):
-      if 'verbose' in info and int(100.*(i+1.)/l) % 5 == 0:
-        sys.stderr.write('\b\b\b\b\b\b\b\b%.2f%%'%(100.*(i+1.)/l))
-      val = f()
+    
+    for c in xrange(len(results)):
+      r = results[c]
+      f = r[2]
+      thisResult = f()
       try:
-        if val[0]:
-          ray = val[1]
-          n = np.array([0,0,1.])
-          result0[ix,iy] = np.dot(n,-ray.direction)
-          result1[ix,iy] = ray.tnear
-          result2[ix,iy] = ray.tfar
+       ww = np.where(np.array(thisResult)[:,0])[0]
+       iix = r[0][ww]
+       iiy = r[1][ww]
+       for j,val in enumerate(np.array(thisResult)[ww]):
+          if val[0]:
+            ix = iix[j]
+            iy = iiy[j]
+            ray = val[1]
+            n = np.array([0,0,1.])
+            result0[size[0]-1-ix,size[1]-1-iy] = np.dot(n,-ray.direction)
+            result1[size[0]-1-ix,size[1]-1-iy] = ray.tnear
+            result2[size[0]-1-ix,size[1]-1-iy] = ray.tfar
       except:
         pass
   else:
@@ -533,7 +561,6 @@ def test(base,tip,obj=None,type=None,info={}):
         o[1] = origin[1] + dimensions[1] * 2.*(iy-size[1]*0.5)/size[1]
         ray.length = ray.tnear = ray.tfar =PyRatBig
         ray.origin = o
-        #import pdb;pdb.set_trace()
         hit,thisRay = obj.intersects(ray)
         if hit:
           ray = thisRay
