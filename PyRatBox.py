@@ -538,9 +538,9 @@ def test(base,tip,obj=None,type=None,info={}):
         if hit:
           ray = thisRay
           n = np.array([0,0,1.])
-          result0[ix,iy] = np.dot(n,-ray.direction)
-          result1[ix,iy] = ray.tnear
-          result2[ix,iy] = ray.tfar
+          result0[size[0]-1-ix,size[1]-1-iy] = np.dot(n,-ray.direction)
+          result1[size[0]-1-ix,size[1]-1-iy] = ray.tnear
+          result2[size[0]-1-ix,size[1]-1-iy] = ray.tfar
   if 'verbose' in info:
     sys.stderr.write('\nWriting results\n')
   plt.clf()
