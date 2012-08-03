@@ -29,18 +29,31 @@ class PyRatObjParser(object):
     self.read(filename)
     if self.verbose:
       sys.stderr.write('\n ... sorting bbox contents\n')
-    self.root = self.reconcile(self.root)
+    self.root = self.reconcile(self.root,1)
     # reset the stack
     self.point = np.array(self.point)
     self.verbose=verbose
     self.reportingFrequency = 10
+
+  def dump(self,filename):
+    '''
+    Dump a numpy representation
+    '''
+    np.savez(filename,self=self)
+
+  def load(self,filename):
+    '''
+    unDump a numpy representation
+    '''
+    return np.load(filename)
+
 
   def combine(self,other):
     '''
     combine other with self
     '''
 
-  def reconcile(self,bbox):
+  def reconcile(self,bbox,level):
     '''
     Reconcile world object:
      - update bboxes (min, max)
@@ -48,19 +61,32 @@ class PyRatObjParser(object):
        (this gets rid of spurious bbox info)
      - updates the surface area (size) info for the box
     '''
+    try:
+      if bbox.visited:
+        return bbox
+    except:
+      bbox.visited = True
     # if there is only one object and its a box and its empty
     # then delete it
-    if len(bbox.contents) == 1:
-      if type(bbox.contents[0]) == PyRatBox:
-        if bbox.contents[0].empty:
-          return self.reconcile(bbox.contents[0])
+    #if len(bbox.contents) == 1:
+    #  if type(bbox.contents[0]) == PyRatBox:
+    #    if bbox.contents[0].empty:
+    #      return self.reconcile(bbox.contents[0])
     # scan over the world object
     for c,i in enumerate(bbox.contents):
-      bbox.contents[c] = self.reconcile(i)
-      if type(i) == PyRatBox and bbox.contents[c].invisible:
-        # remove it
-        bbox.contents.pop(c)
+      bbox.contents[c] = self.reconcile(i,level+1)
+    #  if type(i) == PyRatBox and bbox.contents[c].invisible:
+    #    # remove it
+    #    import pdb;pdb.set_trace()
+    #    bbox.contents.pop(c)
     try:
+      if self.verbose:
+        for i in xrange(100):
+          sys.stderr.write('\b')
+        for i in xrange(level):
+          sys.stderr.write('-')
+        sys.stderr.write('>(%d)'%level)
+      #import pdb;pdb.set_trace()
       if not bbox.empty:
         min = bbox.min
         max = bbox.max
@@ -254,12 +280,12 @@ class PyRatObjParser(object):
           axis = np.array(this[i+1:i+1+3]).astype(float)
           rot = float(this[i+3])
           fix_point = np.array(this[i+4:i+4+3]).astype(float)
-          matrix2,offset2 = self.rotate_about_arbitrary_axis(axis,rot,fix_point)
+          matrix2,offset2 = self.rotate_about_arbitrary_axis(axis,rot,fix_point)
         elif n == 'scale_fix_point':
           scale = float(this[i+1])
           fix_point = np.array(this[i+2:i+2+3]).astype(float)
           matrix2,offset2 = self.load_scaling_fix_point_matrix4(scale,fix_point)
-        elif n == 'scale_differential_fix_point':
+        elif n == 'scale_differential_fix_point':
           scale = np.array(this[i+1:i+1+3]).astype(float)
           fix_point = np.array(this[i+3:i+3+3]).astype(float)
           matrix2,offset2 = self.load_differential_scaling_fix_point_matrix4(\
@@ -267,7 +293,8 @@ class PyRatObjParser(object):
         elif n == 'rotate_about_x_axis_fix_point':
           rot = float(this[i+1])
           fix_point = np.array(this[i+2:i+2+3]).astype(float)
-          matrix2,offset2 = self.load_x_axis_rotation_fix_point_matrix4(\                                     theta,fix_point)
+          matrix2,offset2 = self.load_x_axis_rotation_fix_point_matrix4(\
+                                     theta,fix_point)
         elif n == 'rotate_about_y_axis_fix_point':
           rot = float(this[i+1])
           fix_point = np.array(this[i+2:i+2+3]).astype(float)
@@ -276,7 +303,8 @@ class PyRatObjParser(object):
         elif n == 'rotate_about_z_axis_fix_point':
           rot = float(this[i+1])
           fix_point = np.array(this[i+2:i+2+3]).astype(float)
-          matrix2,offset2 = self.load_z_axis_rotation_fix_point_matrix4(\                                     theta,fix_point)
+          matrix2,offset2 = self.load_z_axis_rotation_fix_point_matrix4(\
+                                     theta,fix_point)
         else:
           noGood = True
         if not noGood:
@@ -533,9 +561,29 @@ def main():
   Test
   '''
   from PyRatObjParser import PyRatObjParser
+  from PyRatClone import PyRatClone
+  from PyRatBox import test
+
   filename = 'spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_20.obj'
   world = PyRatObjParser(filename,verbose=True)
 
+  clone = PyRatClone(np.zeros(3),None)
+  clone.thisGroup = None
+  clone.offset = np.array([-0.5,0.5,0.])
+  clone.matrix = np.eye(3)
+  c = np.cos(30*np.pi/180.)
+  s = np.sin(30*np.pi/180.)
+  clone.matrix[1,1] = clone.matrix[0,0] = c
+  clone.matrix[0,1] = -s
+  clone.matrix[1,0] = s
+  clone.matrix *= 0.01
+
+  clone.contents = [world]
+  info = {'verbose':True}
+  name = str(globals()['__file__'].split('.')[0])
+  test(np.zeros(3),np.zeros(3),obj=clone,info=info,type=name,nAtTime=100*100/20)
+  
+  print 'ok'
 
 if __name__ == "__main__":
     main()

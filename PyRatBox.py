@@ -446,6 +446,15 @@ def test(base,tip,obj=None,type=None,info={},nAtTime=200):
   '''
 
   from PyRatRay import PyRatRay
+  from PyRatEllipsoid import PyRatEllipsoid
+  from PyRatRay import PyRatRay
+  from PyRatCylinder import PyRatCylinder
+  from PyRatFacet import PyRatFacet
+  from PyRatSpheroid import PyRatSpheroid
+  from PyRatDisk import PyRatDisk
+  from PyRatPlane import PyRatPlane
+  from PyRatObjParser import PyRatObjParser
+  from PyRatClone import PyRatClone
   import pylab as plt
 
   try:

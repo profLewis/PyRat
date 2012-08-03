@@ -22,8 +22,33 @@ def main():
   '''
   Test code
   '''
-  filename = 'PyRat/spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_20.obj'
-  p = PyRatObjParser(filename,reportingFrequency=100,verbose=True)
+  from PyRatObjParser import PyRatObjParser
+  filename = 'spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_20.obj'
+  try:
+    world = PyRatObjParser.load(filename +'.npz')
+  except:
+    world = PyRatObjParser(filename,verbose=True)
+    world.dump(filename +'.npz')
+
+  import pdb;pdb.set_trace()
+  print 'ok'
+
+
+def dump(self,filename):
+  '''
+  Dump a numpy representation
+  doesnt work right now
+  '''
+  np.savez(filename,self=self)
+
+def load(self,filename):
+  '''
+  unDump a numpy representation
+  '''
+  return np.load(filename)
+
+
+
 
 if __name__ == "__main__":
     main()
