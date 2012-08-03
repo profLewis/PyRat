@@ -43,10 +43,10 @@ class PyRatEllipsoid(PyRatPlane):
     # approximation http://en.wikipedia.org/wiki/Ellipsoid 
     p = 1.6075
     rp = self.radius ** p
-    self.size = np.pi * 4 * ((rp[0]*rp[1]+rp[0]*rp[2]+rp[1]*rp[2])/3.) ** (1./p)
 
     PyRatPlane.__init__(self,self.centre,None,\
                              contents=contents,material=material,info=info)
+    self.size = np.pi * 4 * ((rp[0]*rp[1]+rp[0]*rp[2]+rp[1]*rp[2])/3.) ** (1./p)
     self.empty = False
     self.base = self.centre
 

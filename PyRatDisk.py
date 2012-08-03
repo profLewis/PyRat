@@ -42,13 +42,12 @@ class PyRatDisk(PyRatPlane):
       self.empty = True
       return self
 
-    self.r2 = self.radius *self.radius 
-    self.size = np.pi * self.r2
-
     PyRatPlane.__init__(self,base,normal,\
                              contents=contents,material=material,info=info)
     R = np.ones(3)*self.radius
-    
+    self.r2 = self.radius *self.radius
+    self.size = np.pi * self.r2
+
     self.min = np.min([R+base,base-R],axis=0)
     self.max = np.max([R+base,base-R],axis=0)
     self.extent = self.max - self.min

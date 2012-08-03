@@ -68,7 +68,8 @@ class PyRatBox(object):
 
     '''
     # load the core descriptors
-    self.invisible=False
+    self.info = info or {}
+
     self.base = np.array(base).astype(float)
     if np.array(extent).size == 3:
       self.extent = extent
@@ -79,6 +80,19 @@ class PyRatBox(object):
     self.max = np.max([self.base,max],axis=0)
     self.extent = self.getExtent()
     self.base = self.min
+
+    if 'transparent' in self.info:
+      self.invisible = True
+    else:
+      self.invisible = False
+
+    # check if object is volumetric
+    if 'lad' in self.info:
+      self.lad = self.info['lad']
+      if 'g' in self.info:
+        self.g = g
+      else:
+        self.g = 0.5 #self.spherical
 
     # some information about what we contain
     self.contents = contents or []
@@ -289,6 +303,26 @@ class PyRatBox(object):
     if ray.tfar<0.0:    return False
     return True
 
+  def vintersect(self,ray,closest=True):
+    '''
+    Interesection test for volumetric object
+    '''
+    if not self.intersect(ray,closest=closest):
+      return False
+    if not 'lad' in self.info:
+      return True 
+    if ray.tnear >= PyRatBig or ray.tfar >= PyRatBig:
+      return False
+    ray.rayLengthThroughObject=ray.tfar-ray.tnear
+    travel = -np.log(np.random.random())/(self.g*self.lad)
+   
+    if travel >= ray.rayLengthThroughObject:
+      return False
+    ray.tnear += travel
+    ray.tfar = ray.tnear
+    ray.object = self
+    return True
+
   def intersect(self,ray,closest=True):
     '''
     Interesection test for ray for box object
@@ -320,7 +354,21 @@ class PyRatBox(object):
     '''
     Call intersect but return ray as well
     '''
-    return  self.intersect(ray,closest=closest),ray.copy() 
+    hit = False
+    for i in self.contents:
+      if not i.invisible:
+        thisHit,thisRay = i.intersects(ray.copy(),closest=True)
+        if thisHit and thisRay.tnear < ray.length:
+          #import pdb;pdb.set_trace()
+          ray = thisRay
+          ray.length = thisRay.tnear
+          hit = thisHit
+    thisRay = ray.copy()
+    thisHit = self.vintersect(thisRay,closest=True)
+    if thisHit or hit:
+      ray = thisRay
+      ray.length = thisRay.tnear
+    return thisHit or hit,ray.copy()
 
   def surfaceNormal(self,ray,length,true=True):
     '''
@@ -356,9 +404,15 @@ class PyRatBox(object):
       ok   : set to True is ray.tnear is already calculated
              otherwise self.intersect(ray) is called
     '''
-    ok = ok or self.intersect(ray)
+    ok = ok or self.vintersect(ray)
     if ok: return ray.origin + (ray.length-PyRatRayTol) * ray.direction
     return None
+
+  def spherical(self,angles=None):
+    '''
+    spherical leaf angle distribution G function
+    '''
+    return 0.5
 
   def sortContent(self):
     '''
@@ -372,7 +426,7 @@ class PyRatBox(object):
     '''
     pass
 
-def test(base,tip,type=None,info={}):
+def test(base,tip,obj=None,type=None,info={}):
   '''
   A simple test of the intersection algorithm
  
@@ -401,7 +455,7 @@ def test(base,tip,type=None,info={}):
   exec('from %s import %s'%(type,type))
 
   name = type[5:]
-  obj = eval('%s(base,tip,info=info)'%type)
+  obj = obj or eval('%s(base,tip,info=info)'%type)
   # ray direction
   direction = np.array([0,0,-1])
 
@@ -460,12 +514,15 @@ def test(base,tip,type=None,info={}):
       if 'verbose' in info and int(100.*(i+1.)/l) % 5 == 0:
         sys.stderr.write('\b\b\b\b\b\b\b\b%.2f%%'%(100.*(i+1.)/l))
       val = f()
-      if val[0]:
-        ray = val[1]
-        n = np.array([0,0,1.])
-        result0[ix,iy] = np.dot(n,-ray.direction)
-        result1[ix,iy] = ray.tnear
-        result2[ix,iy] = ray.tfar
+      try:
+        if val[0]:
+          ray = val[1]
+          n = np.array([0,0,1.])
+          result0[ix,iy] = np.dot(n,-ray.direction)
+          result1[ix,iy] = ray.tnear
+          result2[ix,iy] = ray.tfar
+      except:
+        pass
   else:
     l = size[0]
     for ix in xrange(size[0]):
@@ -474,8 +531,12 @@ def test(base,tip,type=None,info={}):
           sys.stderr.write('\b\b\b\b\b\b\b\b%.2f%%'%(100*(ix+1)/l))
       for iy in xrange(size[1]):
         o[1] = origin[1] + dimensions[1] * 2.*(iy-size[1]*0.5)/size[1]
-        ray.length = PyRatBig
-        if obj.intersect(ray):
+        ray.length = ray.tnear = ray.tfar =PyRatBig
+        ray.origin = o
+        #import pdb;pdb.set_trace()
+        hit,thisRay = obj.intersects(ray)
+        if hit:
+          ray = thisRay
           n = np.array([0,0,1.])
           result0[ix,iy] = np.dot(n,-ray.direction)
           result1[ix,iy] = ray.tnear
@@ -508,9 +569,10 @@ def main():
   '''
   min = [-0.5,-0.5,2]
   extent = [1,2,1]
-  info = {'verbose':True}
+  info = {'verbose':True,'lad':3.0}
   test(min,extent,info=info)
 
 
 if __name__ == "__main__":
     main()
+

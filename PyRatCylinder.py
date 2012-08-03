@@ -63,17 +63,17 @@ class PyRatCylinder(PyRatPlane):
       return self
 
     self.normal /= self.length 
+
+    PyRatPlane.__init__(self,self.base,self.normal,\
+                             contents=contents,material=material,info=info)
+    self.empty = False
+    self.base = base
     self.size = 2. * np.pi * self.radius * self.length
     if self.doCaps:
       self.size += 2. * np.pi * self.radius * self.radius
     if self.size <= 0:
       self.empty = True
       return self
-
-    PyRatPlane.__init__(self,self.base,self.normal,\
-                             contents=contents,material=material,info=info)
-    self.empty = False
-    self.base = base
 
     self.R2 = self.radius*self.radius
     

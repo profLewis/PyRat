@@ -66,6 +66,7 @@ class PyRatFacet(PyRatPlane):
       
     PyRatPlane.__init__(self,vertices[0],n,\
                              contents=contents,material=material,info=info)
+    self.size = np.sqrt(mod_normal*0.5)
     self.min = np.min(vertices,axis=0)
     self.max = np.max(vertices,axis=0)
     self.extent = self.max - self.min

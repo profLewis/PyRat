@@ -7,10 +7,14 @@ from PyRatSpheroid import PyRatSpheroid
 from PyRatDisk import PyRatDisk
 from PyRatPlane import PyRatPlane
 from PyRatObjParser import PyRatObjParser
+from PyRatClone import PyRatClone
+
 try:
   import pp
+  PyRatIsPP = True
 except:
-  pass
+  PyRatIsPP = False
+
 import numpy as np
 
 def main():

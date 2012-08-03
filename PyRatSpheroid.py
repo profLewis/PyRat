@@ -38,7 +38,9 @@ def main():
   A scan over a Spheroid is made and an image produced
   tests/PyRatSpheroid-near.png with the distances.
 
-  It should be 1 in the centre (since the camera is located at z=4)
+  It should be ~1 in the centre (since the camera is located at z=4)
+  but this is a volumetric example.
+
   '''
   import sys
   import os
@@ -50,7 +52,7 @@ def main():
 
   base = np.array([0,0,2.])
   radius = 1.0
-  info = {'verbose':True}
+  info = {'verbose':True,'lad':3.0}
 
   name = str(globals()['__file__'].split('.')[0])
   test(base,radius,info=info,type=name)
