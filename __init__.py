@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from PyRatBox import *
 from PyRatEllipsoid import PyRatEllipsoid
 from PyRatRay import PyRatRay

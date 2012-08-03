@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 A PyRat object has methods that allow for:
     - loading (e.g. from a txt string)

@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from PyRatPlane import *
 from PyRatDisk import PyRatDisk
 from PyRatBox import PyRatTol

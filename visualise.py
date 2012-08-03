@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from PyRatBox import *
 
 import pyglet
