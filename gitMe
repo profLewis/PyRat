@@ -1,0 +1,4 @@
+git add *.py
+git commit
+git remote -v
+git push origin master
