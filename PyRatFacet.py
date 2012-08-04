@@ -148,7 +148,7 @@ def main():
   vertices = np.array([[0,0,3.],[0,1,2],[1,0,4]])
   info = {'verbose':True}
 
-  name = str(globals()['__file__'].split('.')[0])
+  name = str(globals()['__file__'].split('/')[-1].split('.')[0])
   test(vertices,None,info=info,type=name)
 
 if __name__ == "__main__":

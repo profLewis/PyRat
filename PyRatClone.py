@@ -156,7 +156,7 @@ def main():
 
   clone.contents = [box,sph,ell]
 
-  name = str(globals()['__file__'].split('.')[0])  
+  name = str(globals()['__file__'].split('/')[-1].split('.')[0])  
   test(min,extent,obj=clone,info=info,type=name,nAtTime=100*100/20)
 
 

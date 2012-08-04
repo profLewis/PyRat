@@ -308,8 +308,27 @@ class PyRatBox(object):
     '''
     Interesection test for volumetric object
     '''
-    if not self.intersect(ray,closest=closest):
+    from PyRatBox import PyRatBox
+    from PyRatClone import PyRatClone
+    if self.isDefined():
+      return False 
+    thisRay = ray.copy()
+    if not self.intersect(thisRay,closest=closest):
       return False
+    # so we intersect the superstructure
+    # if its a box, then look into its contents
+    if type(self) == PyRatBox or type(self) == PyRatClone:
+      if self.invisible:
+        return True
+
+    
+    ray.tnear = thisRay.tnear
+    ray.tfar = thisRay.tfar
+    try:
+      ray.object = thisRay.object
+    except:
+      ray.object = None
+    ray.length = ray.tnear
     if not 'lad' in self.info:
       return True 
     if ray.tnear >= PyRatBig or ray.tfar >= PyRatBig:
@@ -360,14 +379,24 @@ class PyRatBox(object):
       result.append(self.intersects(ray,closest=closest))
     return result
 
+  def isDefined(self):
+    from PyRatBox import PyRatBox
+    if type(self) != PyRatBox:
+      return False 
+    try:
+      return self.defined
+    except:
+      return False
 
   def intersects(self,ray,closest=True):
     '''
     Call intersect but return ray as well
     '''
     hit = False
+    if self.isDefined():
+      return False,ray
     for i in self.contents:
-      if not i.invisible:
+      if not i.isDefined(): 
         thisHit,thisRay = i.intersects(ray.copy(),closest=True)
         if thisHit and thisRay.tnear < ray.length:
           ray = thisRay
@@ -470,7 +499,7 @@ def test(base,tip,obj=None,type=None,info={},nAtTime=200):
   type = type or str(globals()['__file__'].split('.')[0])
   if 'verbose' in info:
     sys.stderr.write('Object: %s\n'%type)
-
+  type = type.split('/')[-1]
   exec('from %s import %s'%(type,type))
 
   name = type[5:]

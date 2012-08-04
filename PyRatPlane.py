@@ -93,7 +93,7 @@ def main():
   normal = [1,1,1]
   info = {'verbose':True}
 
-  name = str(globals()['__file__'].split('.')[0])
+  name = str(globals()['__file__'].split('/')[-1].split('.')[0])
   test(min,normal,info=info,type=name)
 
 if __name__ == "__main__":

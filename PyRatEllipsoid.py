@@ -119,7 +119,7 @@ def main():
   radius = np.array([0.5,1,1])
   info = {'verbose':True}
 
-  name = str(globals()['__file__'].split('.')[0])
+  name = str(globals()['__file__'].split('/')[-1].split('.')[0])
   test(base,radius,info=info,type=name)
 
 if __name__ == "__main__":

@@ -14,11 +14,20 @@ class PyRatObjParser(object):
 
     none = np.zeros(3)
     self.top = PyRatBox(none,none,material=None)
+    self.top.invisible = True
     self.root = self.top
+    self.root.defined = False
+    self.root.invisible = True
+    self.root.empty = False
+
     self.infinitePlane = []
 
     self.error = self.top.error
 
+    # this is where we keep groups
+    # we have to reconcile all of these as well as
+    # the main object in case some of them
+    # are #define'd
     self.group = {}
 
     self.stack = []
@@ -29,7 +38,8 @@ class PyRatObjParser(object):
     self.read(filename)
     if self.verbose:
       sys.stderr.write('\n ... sorting bbox contents\n')
-    self.root = self.reconcile(self.root,1)
+    if not self.root.isDefined():
+      self.root = self.reconcile(self.root,1)
     # reset the stack
     self.point = np.array(self.point)
     self.verbose=verbose
@@ -39,7 +49,7 @@ class PyRatObjParser(object):
     '''
     Dump a numpy representation
     '''
-    np.savez(filename,self=self)
+    np.savez(filename,self=self.root)
 
   def load(self,filename):
     '''
@@ -66,6 +76,10 @@ class PyRatObjParser(object):
         return bbox
     except:
       bbox.visited = True
+    if bbox.isDefined():
+      # if it has a #define, remove from list
+      return None
+
     # if there is only one object and its a box and its empty
     # then delete it
     #if len(bbox.contents) == 1:
@@ -77,16 +91,14 @@ class PyRatObjParser(object):
       bbox.contents[c] = self.reconcile(i,level+1)
     #  if type(i) == PyRatBox and bbox.contents[c].invisible:
     #    # remove it
-    #    import pdb;pdb.set_trace()
     #    bbox.contents.pop(c)
     try:
       if self.verbose:
-        for i in xrange(100):
-          sys.stderr.write('\b')
-        for i in xrange(level):
-          sys.stderr.write('-')
-        sys.stderr.write('>(%d)'%level)
-      #import pdb;pdb.set_trace()
+        arrowClear = ['\b']*35
+        arrowClear = ''.join(arrowClear)
+        arrow = ['-']*level
+        arrow = '%20s>(%03d)'%(''.join(arrow),level)
+        sys.stderr.write(arrowClear + arrow)
       if not bbox.empty:
         min = bbox.min
         max = bbox.max
@@ -107,6 +119,11 @@ class PyRatObjParser(object):
       pass
     if bbox.size > 0:
       bbox.empty = False
+    # get rid of any None entries and zero sized objects
+    for c,i in enumerate(bbox.contents):
+      if type(i) == PyRatBox and i.empty:
+        bbox.contents[i] = None
+    bbox.contents = [j for j in np.array(bbox.contents)[np.array([i != None for i in bbox.contents])]]
     return bbox
 
   def setupDictionary(self):
@@ -131,6 +148,7 @@ class PyRatObjParser(object):
 
   def define(self,cmd):
     self.top.invisible=True
+    self.top.defined = True
     pass
 
   def clone(self,cmd):
@@ -217,6 +235,7 @@ class PyRatObjParser(object):
                 pass
               
       clone = PyRatClone(np.ones(3),np.ones(3))
+      clone.empty = False
       if (matrix != np.matrix(np.eye(3))).all():
         clone.matrix = matrix
       clone.thisGroup = thisGroup
@@ -437,7 +456,7 @@ class PyRatObjParser(object):
     try:
       this = open(filename).read().split('\n')
       l = float(len(this))
-      reportingFrequency = int(l/self.reportingFrequency)
+      reportingFrequency = np.max([1,int(l/self.reportingFrequency)])
       for i,line in enumerate(this):
         if self.verbose and i%reportingFrequency == 0:
           sys.stderr.write('\b\b\b\b\b\b\b\b%.2f%%'%(100*i/l))
@@ -464,7 +483,10 @@ class PyRatObjParser(object):
     Start a new container box and push on stack
     '''
     from PyRatBox import PyRatBox
-    self.top.contents.append(PyRatBox(np.zeros(3),None))
+    box = PyRatBox(np.zeros(3),None)
+    box.invisible = True
+    box.empty = True
+    self.top.contents.append(box)
     self.stack.append(self.top)
     self.top = self.top.contents[-1]
     
@@ -474,9 +496,27 @@ class PyRatObjParser(object):
     '''
     Close a bounding box
     '''
-    self.top = self.stack.pop()
-    self.verbose == 2 and sys.stderr.write('{%d]'%len(self.stack))
- 
+    if len(self.top.contents) == 0:
+      self.top.empty = True
+    else:
+      self.top.empty = False
+    #if len(self.top.contents) == 1:
+    #  # only one item, so put it in the upper box
+    #  if len(self.stack[-1].contents) == 1 and self.stack[-1].contents[0] == self.top:
+    #    # replace item above with this one
+    #    older = self.stack[-1].contents[0]
+    #    self.stack[-1].contents[0] = self.top.contents[0]
+    #    older.contents = []
+    #    older.empty = True
+    #    del older
+    #  else: 
+    #    self.stack[-1].contents.append(self.top.contents[0])
+    try:
+      self.top = self.stack.pop()
+      self.verbose == 2 and sys.stderr.write('{%d]'%len(self.stack))
+    except:
+      pass
+
   def mtllib(self,cmd):
     '''
     Material library
@@ -498,11 +538,7 @@ class PyRatObjParser(object):
                 (self.lineNumber,self.filename,' '.join(cmd)))
     # now we need to reference for this object
     # This should be the last item on the stack but if not its the root
-    try:
-      this = self.stack[-1]
-    except:
-      this = top.root
-    self.group[groupName] = this
+    self.group[groupName] = self.top
 
   def v(self,cmd):
     '''
@@ -565,6 +601,7 @@ def main():
   from PyRatBox import test
 
   filename = 'spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_20.obj'
+  filename = 'tests/test.obj'
   world = PyRatObjParser(filename,verbose=True)
 
   clone = PyRatClone(np.zeros(3),None)
@@ -576,11 +613,11 @@ def main():
   clone.matrix[1,1] = clone.matrix[0,0] = c
   clone.matrix[0,1] = -s
   clone.matrix[1,0] = s
-  clone.matrix *= 0.01
-
-  clone.contents = [world]
+  clone.matrix *= 2
+  clone.empty = False
+  clone.contents = [world.root]
   info = {'verbose':True}
-  name = str(globals()['__file__'].split('.')[0])
+  name = str(globals()['__file__'].split('/')[-1].split('.')[0])
   test(np.zeros(3),np.zeros(3),obj=clone,info=info,type=name,nAtTime=100*100/20)
   
   print 'ok'

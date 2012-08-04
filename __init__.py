@@ -30,7 +30,6 @@ def main():
     world = PyRatObjParser(filename,verbose=True)
     world.dump(filename +'.npz')
 
-  import pdb;pdb.set_trace()
   print 'ok'
 
 

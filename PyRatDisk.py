@@ -157,7 +157,7 @@ def main():
   base = np.array([0,0,3.])
   normal = np.array([0,1,1.])
   info = {'verbose':True,'radius':1.0}
-  name = str(globals()['__file__'].split('.')[0])
+  name = str(globals()['__file__'].split('/')[-1].split('.')[0])
   test(base,normal,info=info,type=name)
 
 if __name__ == "__main__":
