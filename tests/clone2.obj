@@ -1,0 +1,46 @@
+!{
+# global box
+mtllib plants.matlib
+v 0.000000 0.000000 0.000000
+v 0.000000 0.000000 1.000000
+usemtl soil
+# ground plane oriented with normal {0 0 1} going through point {0 0 0}
+plane -1 -2
+
+# the bounding box contains the core virtual object, 'object 1'
+!{
+#define
+g object 1
+usemtl stem
+v 0 0 0
+v 0 0 1
+cyl -1 -2 0.1
+sph -1 0.2
+v -1 0 1
+v 0 0 1
+cyl -1 -2 0.1
+!}
+
+
+# this bounding box contains a collection of object 1 objects
+# and is called 'box 1'
+!{
+# #define
+g box 1
+clone 0 0 0 30 object 1
+# clone 0 1 0 90 object 1
+# clone -1 0 0 -90 object 1
+# clone -1 1 0 180 object 1
+!}
+
+# demonstrating clones of clones
+# !{
+# g frame 1
+# clone 0 0 0 180 box 1
+# clone 0 0 1 box 1
+# clone 0 0 2 0 object 1
+# !}
+# end of global box
+!}
+
+

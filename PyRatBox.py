@@ -310,9 +310,8 @@ class PyRatBox(object):
     '''
     from PyRatBox import PyRatBox
     from PyRatClone import PyRatClone
-    if self.isDefined():
-      return False 
     thisRay = ray.copy()
+    #import pdb;pdb.set_trace()
     if not self.intersect(thisRay,closest=closest):
       return False
     # so we intersect the superstructure
@@ -320,8 +319,6 @@ class PyRatBox(object):
     if type(self) == PyRatBox or type(self) == PyRatClone:
       if self.invisible:
         return True
-
-    
     ray.tnear = thisRay.tnear
     ray.tfar = thisRay.tfar
     try:
@@ -353,8 +350,8 @@ class PyRatBox(object):
       closest : set True to return False if the possible
                 ray length would be greater than ray.length
     '''
-    if self.empty or self.invisible:
-      return False
+    #if self.empty or self.invisible:
+    #  return False
     ray.tnear = PyRatBig
     ray.tfar = PyRatBig*2
     ok = [False,False,False]
@@ -392,21 +389,34 @@ class PyRatBox(object):
     '''
     Call intersect but return ray as well
     '''
-    hit = False
-    if self.isDefined():
-      return False,ray
-    for i in self.contents:
-      if not i.isDefined(): 
-        thisHit,thisRay = i.intersects(ray.copy(),closest=True)
-        if thisHit and thisRay.tnear < ray.length:
-          ray = thisRay
-          ray.length = thisRay.tnear
-          hit = thisHit
+    from PyRatClone import PyRatClone
+    # cheap method if only one entry
+    invisible = self.invisible or type(self) == PyRatClone
+    if invisible and len(self.contents) == 1:
+      return self.contents[0].intersects(ray,closest=closest)
+
+    # first check to see if we hit this object
     thisRay = ray.copy()
-    thisHit = self.vintersect(thisRay,closest=True)
-    if thisHit or hit:
-      ray = thisRay
-      ray.length = thisRay.tnear
+    thisHit = thatHit = self.vintersect(thisRay,closest=True)
+    if not thisHit:
+      return False,ray
+    if invisible:
+      # it doesnt count so forget about it
+      thisHit = False
+      thisRay = ray
+    else:
+      thisRay.length = thisRay.tnear
+    # if not, then don't bother with contents
+    # if we do hit, then have a look at the contents
+    ray = thisRay
+    hit = False
+    for i in self.contents:
+      thatHit,thatRay = i.intersects(ray.copy(),closest=True)
+      if thatHit and thatRay.tnear < ray.length:
+        #import pdb;pdb.set_trace()
+        hit = thatHit
+        ray = thatRay
+        ray.length = thatRay.tnear
     return thisHit or hit,ray.copy()
 
   def surfaceNormal(self,ray,length,true=True):

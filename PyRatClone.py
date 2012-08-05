@@ -84,7 +84,6 @@ class PyRatClone(PyRatBox):
     except:
       pass
 
-    #import pdb;pdb.set_trace()
     try:
       transformed_ray.direction = np.array(np.matrix(ray.direction) * self.matrix.T).flatten()
       mod_ray_direction=np.sqrt(np.dot(transformed_ray.direction,transformed_ray.direction))
@@ -95,8 +94,12 @@ class PyRatClone(PyRatBox):
       transformed_ray.length /= mod_ray_direction
     except:
       pass
-
-    hit,thisRay  = PyRatBox.intersects(self,transformed_ray,closest=closest)
+    # with a clone, we are not interested in the intersection other
+    # than the transformation we apply
+    # contents[0] will always be the contents of a clone as it
+    # points to a group which must be a bounding box
+    import pdb;pdb.set_trace()
+    hit,thisRay  = PyRatBox.intersects(self.contents[0],transformed_ray,closest=closest)
     if hit:
       try:
         thisRay.object.localNormal = np.array(np.matrix(thisRay.object.localNormal) * self.matrix).flatten()
@@ -128,7 +131,7 @@ def main():
   from PyRatSpheroid import PyRatSpheroid
   from PyRatClone import PyRatClone
   from PyRatEllipsoid import PyRatEllipsoid
-
+  from PyRatObjParser import PyRatObjParser
   min = [-0.5,-0.5,2]
   extent = [1,2,1]
   info = {'verbose':True,'lad':3.0}
@@ -138,6 +141,11 @@ def main():
   radius = 0.25
   info = {'verbose':True}
   sph = PyRatSpheroid(centre,radius,info=info)
+
+  centre = [1,0.5,2.5]
+  radius = 0.5
+  info = {'verbose':True}
+  sph2 = PyRatSpheroid(centre,radius,info=info)
 
   base = np.array(min) + np.array(extent) *0.5
   radius = [0.25,0.5,0.5]
@@ -153,9 +161,12 @@ def main():
   clone.matrix[1,1] = clone.matrix[0,0] = c
   clone.matrix[0,1] = -s
   clone.matrix[1,0] = s
-
-  clone.contents = [box,sph,ell]
-
+ 
+  clone.contents = [box,sph,ell,sph2]
+  p = PyRatObjParser(None)
+  p.top = p.root = clone
+  p.reconcile(p.top,0)
+ 
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])  
   test(min,extent,obj=clone,info=info,type=name,nAtTime=100*100/20)
 

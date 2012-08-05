@@ -40,6 +40,8 @@ class PyRatObjParser(object):
       sys.stderr.write('\n ... sorting bbox contents\n')
     if not self.root.isDefined():
       self.root = self.reconcile(self.root,1)
+    for i in self.group.keys():
+      self.group[i] = self.reconcile(self.group[i],1,defined=True) 
     # reset the stack
     self.point = np.array(self.point)
     self.verbose=verbose
@@ -63,7 +65,7 @@ class PyRatObjParser(object):
     combine other with self
     '''
 
-  def reconcile(self,bbox,level):
+  def reconcile(self,bbox,level,defined=False):
     '''
     Reconcile world object:
      - update bboxes (min, max)
@@ -76,7 +78,7 @@ class PyRatObjParser(object):
         return bbox
     except:
       bbox.visited = True
-    if bbox.isDefined():
+    if defined and bbox.isDefined():
       # if it has a #define, remove from list
       return None
 
@@ -122,8 +124,9 @@ class PyRatObjParser(object):
     # get rid of any None entries and zero sized objects
     for c,i in enumerate(bbox.contents):
       if type(i) == PyRatBox and i.empty:
-        bbox.contents[i] = None
-    bbox.contents = [j for j in np.array(bbox.contents)[np.array([i != None for i in bbox.contents])]]
+        bbox.contents[c] = None
+    if len(bbox.contents):
+      bbox.contents = [j for j in np.array(bbox.contents)[np.array([i != None for i in bbox.contents])]]
     return bbox
 
   def setupDictionary(self):
@@ -131,6 +134,7 @@ class PyRatObjParser(object):
     Set up the parser dictionary
     '''
     self.dict = {\
+      '#':self.comment,\
       '#define':self.define,\
       '!{':self.openBox,\
       '!}':self.closeBox,\
@@ -144,7 +148,12 @@ class PyRatObjParser(object):
       'v':self.v,\
       'ell':self.ell,\
       'sph':self.sph,\
+      'cyl':self.cyl,\
+      'ccyl':self.ccyl,\
       'f':self.f}
+
+  def comment(self,cmd):
+    pass
 
   def define(self,cmd):
     self.top.invisible=True
@@ -165,15 +174,20 @@ class PyRatObjParser(object):
       except:
         this = cmd[1:]
       # look up groups
-      offset = np.array(this[:3]).astype(float)
+      try:
+        offset = np.array(this[:3]).astype(float)
+        this = cmd[4:]
+      except:
+        offset = np.zeros(3)
+        
       thisGroup = None
       thisGroupName = None
       matrix = np.matrix(np.eye(3))
       done = np.zeros_like(np.array(this)).astype(bool)
-      for i in xrange(3,len(this)):
+      for i in xrange(len(this)):
         if not done[i]:
           if this[i] == 'Rx':
-            theta = float(this[i+1])
+            theta = float(this[i+1])*np.pi/180.
             done[i:i+2] = True
             if theta != 0:
               c = np.cos(theta)
@@ -184,7 +198,7 @@ class PyRatObjParser(object):
               m[1,2] = -s
               matrix = matrix * np.matrix(m)
           elif this[i] == 'Ry':
-            theta = float(this[i+1])
+            theta = float(this[i+1])*np.pi/180.
             done[i:i+2] = True
             if theta != 0:
               c = np.cos(theta)
@@ -236,6 +250,7 @@ class PyRatObjParser(object):
               
       clone = PyRatClone(np.ones(3),np.ones(3))
       clone.empty = False
+      clone.invisible = True
       if (matrix != np.matrix(np.eye(3))).all():
         clone.matrix = matrix
       clone.thisGroup = thisGroup
@@ -369,7 +384,7 @@ class PyRatObjParser(object):
       self.error('could not interpret "ell" line %d of %s: %s'%\
                 (self.lineNumber,self.filename,' '.join(cmd)))
 
-  def cyl(self,cmdi,info={}):
+  def cyl(self,cmd,info={}):
     '''
     Cylinder
   
@@ -377,11 +392,11 @@ class PyRatObjParser(object):
     '''
     from PyRatCylinder import PyRatCylinder
     try:
-      this = np.array([cmd[1],cmd[2]]).astype(float)
+      this = np.array([cmd[1],cmd[2]]).astype(int)
       this[this<0] += self.nPoints
-      info.update({'radius':float(this[3])})
+      info.update({'radius':float(cmd[3])})
       self.top.contents.append(\
-           PyRatCylinder(self.point[this[1]],self.point[this[1]],info=info,\
+           PyRatCylinder(self.point[this[0]],self.point[this[1]],info=info,\
                          material=self.top.material))
       self.verbose == 2 and sys.stderr.write('c')
     except:
@@ -410,7 +425,7 @@ class PyRatObjParser(object):
       if this < 0:
         this += self.nPoints
       self.top.contents.append(\
-           PyRatSpheroid(self.point[this[1]],float(this[2]),\
+           PyRatSpheroid(self.point[int(this)],float(cmd[2]),\
                          material=self.top.material))
       self.verbose == 2 and sys.stderr.write('s')
     except:
@@ -463,6 +478,10 @@ class PyRatObjParser(object):
         if len(line):
           self.lineNumber = i+1
           self.parseLine(line.split())
+      try:
+        self.closeBox('')
+      except:
+        pass
     except:
       self.error('Unable to read wavefront file %s'%filename)
 
@@ -511,6 +530,11 @@ class PyRatObjParser(object):
     #    del older
     #  else: 
     #    self.stack[-1].contents.append(self.top.contents[0])
+    if len(self.top.contents) > 0:
+       for c,i in enumerate(self.top.contents):
+         if type(i) == PyRatBox and (i.isDefined() or i.empty):
+           self.top.contents[c] = None  
+       self.top.contents = [j for j in np.array(self.top.contents)[np.array([i != None for i in self.top.contents])]]
     try:
       self.top = self.stack.pop()
       self.verbose == 2 and sys.stderr.write('{%d]'%len(self.stack))
@@ -594,28 +618,35 @@ class PyRatObjParser(object):
 
 def main():
   '''
-  Test
+  Test to demonstrate reading an obj file
+  and using clones
+
   '''
   from PyRatObjParser import PyRatObjParser
   from PyRatClone import PyRatClone
   from PyRatBox import test
 
   filename = 'spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_20.obj'
-  filename = 'tests/test.obj'
+  filename = 'tests/clone2.obj'
   world = PyRatObjParser(filename,verbose=True)
 
   clone = PyRatClone(np.zeros(3),None)
   clone.thisGroup = None
   clone.offset = np.array([-0.5,0.5,0.])
+  clone.offset = np.array([0,0,0.])
   clone.matrix = np.eye(3)
-  c = np.cos(30*np.pi/180.)
-  s = np.sin(30*np.pi/180.)
+  
+  c = np.cos(0*np.pi/180.)
+  s = np.sin(0*np.pi/180.)
   clone.matrix[1,1] = clone.matrix[0,0] = c
   clone.matrix[0,1] = -s
   clone.matrix[1,0] = s
-  clone.matrix *= 2
+  clone.matrix *= 1.
   clone.empty = False
   clone.contents = [world.root]
+  world.reconcile(clone,0)
+ 
+  import pdb;pdb.set_trace()
   info = {'verbose':True}
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
   test(np.zeros(3),np.zeros(3),obj=clone,info=info,type=name,nAtTime=100*100/20)

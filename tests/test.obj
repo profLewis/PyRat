@@ -1,0 +1,14 @@
+!{ 
+#define
+g core object
+v 0 0 0
+v 1 1 1
+disk -2 -1 0.5
+v 0.5 0.5 0
+v 0 0 1
+disk -2 -1 0.25
+!} 
+
+clone 0 0 0 core object
+clone -1 -1 0 45 core object
+
