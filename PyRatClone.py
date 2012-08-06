@@ -109,7 +109,15 @@ class PyRatClone(PyRatBox):
         pass
 
       try:
-        thisRay.length *= mod_ray_direction
+        thisRay.length *= self.scale
+        thisRay.tnear *= self.scale
+        thisRay.tfar *= self.scale
+      except:
+        pass
+
+      try:
+        #import pdb;pdb.set_trace()
+        #thisRay.length *= mod_ray_direction
         thisRay.origin = ray.origin
         thisRay.direction = ray.direction
       except:

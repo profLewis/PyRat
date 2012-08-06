@@ -187,7 +187,10 @@ class PyRatBox(object):
         pass
     self.min = np.min(corners,axis=0)
     self.max = np.max(corners,axis=0)
-
+    try:
+      self.scale = np.linalg.det(self.matrix)**(1./3.)
+    except:
+      pass
 
 
   def error(self,msg):
@@ -553,7 +556,7 @@ class PyRatBox(object):
     '''
     pass
 
-def test(base,tip,obj=None,type=None,info={},nAtTime=200):
+def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
   '''
   A simple test of the intersection algorithm
  
@@ -702,15 +705,15 @@ def test(base,tip,obj=None,type=None,info={},nAtTime=200):
   plt.colorbar()
   if not os.path.exists('tests'):
     os.makedirs('tests')
-  plt.savefig('tests/PyRat%s.png'%name)
+  plt.savefig('tests/PyRat%s.png'%file or name)
   plt.clf()
   plt.imshow(result1,interpolation='nearest')
   plt.colorbar()
-  plt.savefig('tests/PyRat%s-near.png'%name)
+  plt.savefig('tests/PyRat%s-near.png'%file or name)
   plt.clf()
   plt.imshow(result2,interpolation='nearest')
   plt.colorbar()
-  plt.savefig('tests/PyRat%s-far.png'%name)
+  plt.savefig('tests/PyRat%s-far.png'%file or name)
 
 
 def main():
