@@ -68,4 +68,4 @@ t0 = time.clock()
 t0w = time.time()
 test(np.zeros(3),np.zeros(3),obj=clone,info=info,type=None,file='RAMI',nAtTime=100*100/20)
 print time.clock() - t0, "seconds process time"
-print time.time() - t0, "seconds wall time"
+print time.time() - t0w, "seconds wall time"
