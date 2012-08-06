@@ -47,7 +47,10 @@ class PyRatEllipsoid(PyRatPlane):
 
     PyRatPlane.__init__(self,self.centre,None,\
                              contents=contents,material=material,info=info)
-    self.size = np.pi * 4 * ((rp[0]*rp[1]+rp[0]*rp[2]+rp[1]*rp[2])/3.) ** (1./p)
+    if (self.radius == self.radius[0]).all():
+      self.size = (4./3.)*np.pi*self.radius[0]**3
+    else:
+      self.size = np.pi * 4 * ((rp[0]*rp[1]+rp[0]*rp[2]+rp[1]*rp[2])/3.) ** (1./p)
     self.empty = False
     self.base = self.centre
 
@@ -73,7 +76,7 @@ class PyRatEllipsoid(PyRatPlane):
     '''
     if self.empty:
       return False
-    A = ray.origin - self.base
+    A = ray.origin - self.centre
     B = A/self.radius
     C = ray.direction/self.radius
     p = np.dot(B,B)-1.

@@ -73,6 +73,7 @@ class PyRatObjParser(object):
        (this gets rid of spurious bbox info)
      - updates the surface area (size) info for the box
     '''
+    from PyRatClone import PyRatClone
     try:
       if bbox.visited:
         return bbox
@@ -81,7 +82,9 @@ class PyRatObjParser(object):
     if defined and bbox.isDefined():
       # if it has a #define, remove from list
       return None
-
+    if type(self) == PyRatClone:
+      import pdb;pdb.set_trace()
+      print 'clone'
     # if there is only one object and its a box and its empty
     # then delete it
     #if len(bbox.contents) == 1:
@@ -101,7 +104,7 @@ class PyRatObjParser(object):
         arrow = ['-']*level
         arrow = '%20s>(%03d)'%(''.join(arrow),level)
         sys.stderr.write(arrowClear + arrow)
-      if not bbox.empty:
+      if not bbox.empty and type(bbox) != PyRatClone:
         min = bbox.min
         max = bbox.max
         size = bbox.size
@@ -112,15 +115,18 @@ class PyRatObjParser(object):
         bbox.min = np.zeros(3) + PyRatBig
       if len(bbox.max) == 0:
         bbox.max = np.zeros(3) + -PyRatBig
-      if not bbox.empty:
+      if not bbox.empty and type(bbox) != PyRatClone:
         # if this isnt an empty box then add in its contents
         bbox.min = np.min(np.atleast_2d([bbox.min,min]),axis=0)
         bbox.max = np.max(np.atleast_2d([bbox.max,max]),axis=0)
         bbox.size += size
+      bbox.updateBbox()
     except:
       pass
     if bbox.size > 0:
       bbox.empty = False
+    #bbox.base = bbox.min
+    bbox.extent = bbox.max - bbox.min
     # get rid of any None entries and zero sized objects
     for c,i in enumerate(bbox.contents):
       if type(i) == PyRatBox and i.empty:
@@ -247,18 +253,17 @@ class PyRatObjParser(object):
                   matrix = matrix * np.matrix(m)
               except:
                 pass
-              
-      clone = PyRatClone(np.ones(3),np.ones(3))
+      # NB dummy extent at this point        
+      clone = PyRatClone(np.zeros(3),None)
       clone.empty = False
       clone.invisible = True
-      if (matrix != np.matrix(np.eye(3))).all():
+      if (matrix != np.matrix(np.eye(3))).any():
         clone.matrix = matrix
       clone.thisGroup = thisGroup
       clone.thisGroupName = thisGroupName
       if np.abs(offset).sum() > 0:
         clone.offset = offset
       clone.contents = [clone.thisGroup]
-
       self.top.contents.append(clone)
       self.verbose == 2 and sys.stderr.write('<Clone %s>'%thisGroupName)      
     except:
@@ -519,6 +524,7 @@ class PyRatObjParser(object):
       self.top.empty = True
     else:
       self.top.empty = False
+
     #if len(self.top.contents) == 1:
     #  # only one item, so put it in the upper box
     #  if len(self.stack[-1].contents) == 1 and self.stack[-1].contents[0] == self.top:
@@ -540,6 +546,8 @@ class PyRatObjParser(object):
       self.verbose == 2 and sys.stderr.write('{%d]'%len(self.stack))
     except:
       pass
+
+
 
   def mtllib(self,cmd):
     '''
@@ -627,26 +635,27 @@ def main():
   from PyRatBox import test
 
   filename = 'spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_20.obj'
-  filename = 'tests/clone2.obj'
+  filename = 'tests/clone3.obj'
   world = PyRatObjParser(filename,verbose=True)
 
   clone = PyRatClone(np.zeros(3),None)
   clone.thisGroup = None
   clone.offset = np.array([-0.5,0.5,0.])
-  clone.offset = np.array([0,0,0.])
+  clone.offset = np.array([1.5,-1,0.])
   clone.matrix = np.eye(3)
   
-  c = np.cos(0*np.pi/180.)
-  s = np.sin(0*np.pi/180.)
+  c = np.cos(-15*np.pi/180.)
+  s = np.sin(-15*np.pi/180.)
   clone.matrix[1,1] = clone.matrix[0,0] = c
   clone.matrix[0,1] = -s
   clone.matrix[1,0] = s
-  clone.matrix *= 1.
+  clone.matrix *= 0.5
   clone.empty = False
+  clone.invisible = True
   clone.contents = [world.root]
   world.reconcile(clone,0)
- 
-  import pdb;pdb.set_trace()
+
+  clone.updateBbox() 
   info = {'verbose':True}
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
   test(np.zeros(3),np.zeros(3),obj=clone,info=info,type=name,nAtTime=100*100/20)

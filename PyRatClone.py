@@ -98,7 +98,7 @@ class PyRatClone(PyRatBox):
     # than the transformation we apply
     # contents[0] will always be the contents of a clone as it
     # points to a group which must be a bounding box
-    import pdb;pdb.set_trace()
+    #import pdb;pdb.set_trace()
     hit,thisRay  = PyRatBox.intersects(self.contents[0],transformed_ray,closest=closest)
     if hit:
       try:

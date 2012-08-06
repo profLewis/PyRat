@@ -25,21 +25,43 @@ cyl -1 -2 0.1
 # this bounding box contains a collection of object 1 objects
 # and is called 'box 1'
 !{
-# #define
+#define
 g box 1
-clone 0 0 0 90 object 1
+clone 0 0 0 0 object 1
 clone 0 1 0 90 object 1
 clone -1 0 0 -90 object 1
 clone -1 1 0 180 object 1
 !}
 
-# demonstrating clones of clones
-# !{
-# g frame 1
-# clone 0 0 0 180 box 1
-# clone 0 0 1 box 1
-# clone 0 0 2 0 object 1
-# !}
+# a 4-frame
+!{
+#define
+g frame 1
+clone 0 0 0 box 1
+clone 0 1 0 box 1
+clone -1 0 0 box 1
+clone -1 1 0 box 1
+!}
+
+!{
+#define
+g bigframe 1
+clone 0 0 0 frame 1
+clone 0 2 0 frame 1
+clone -2 0 0 frame 1
+clone -2 2 0 frame 1
+!}
+
+# clone of clone of clone of clone
+!{
+g bigbigframe 1
+clone 0 0 0 bigframe 1
+clone 0 0 1 bigframe 1
+clone 0 0 2 bigframe 1
+clone 0 0 3 bigframe 1
+!}
+
+
 # end of global box
 !}
 

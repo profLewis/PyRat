@@ -105,6 +105,7 @@ class PyRatCylinder(PyRatPlane):
     import numpy as np
     if self.empty:
       return False
+
     if not self.ray_on_infinite_cylinder(ray,closest=closest):
       return False
     hitLengths =  ray.tnear
@@ -127,7 +128,6 @@ class PyRatCylinder(PyRatPlane):
       ray.tfar = valid[1]
     else:
       ray.tfar = ray.tnear
-
     ray.rayLengthThroughObject=ray.tfar-ray.tnear
     return True
 

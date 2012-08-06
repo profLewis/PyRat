@@ -113,6 +113,83 @@ class PyRatBox(object):
     if not self.empty:
       self.size = np.prod(self.extent)
 
+  def report(self,level=0):
+    '''
+    Report on object contents
+    '''
+    buff = '_'*level
+    self.error('%05d %s{'%(level,buff))
+    self.error('%s self     \t%s'%(buff,str(self)))
+    self.error('%s type     \t%s'%(buff,str(type(self))))
+    try:
+      self.error('%s offset   \t%s'%(buff,str(self.offset)))
+    except:
+      pass
+    try:
+      self.error('%s matrix  \t%s'%(buff,str(self.matrix)))
+    except:
+      pass
+    try:
+      self.error('%s tip      \t%s'%(buff,str(self.tip)))
+    except:
+      pass
+    try:
+      self.error('%s centre    \t%s'%(buff,str(self.centre)))
+    except:
+      pass
+    try:
+      self.error('%s radius    \t%s'%(buff,str(self.radius)))
+    except:
+      pass
+    try:
+      self.error('%s normal    \t%s'%(buff,str(self.normal)))
+    except:
+      pass
+
+    self.error('%s min      \t%s'%(buff,str(self.min)))
+    self.error('%s max      \t%s'%(buff,str(self.max)))
+    self.error('%s base     \t%s'%(buff,str(self.base)))
+    self.error('%s extent   \t%s'%(buff,str(self.extent)))
+    self.error('%s invisible\t%s'%(buff,str(self.invisible)))
+    self.error('%s empty    \t%s'%(buff,str(self.empty)))
+    self.error('%s material \t%s'%(buff,str(self.material)))
+    self.error('%s size     \t%s'%(buff,str(self.size)))
+    self.error('%s info     \t%s'%(buff,str(self.info)))
+    self.error('%s contents:'%(buff))
+    for c in self.contents:
+      c.report(level=level+1)
+    self.error('%05d %s}'%(level,buff))
+
+
+  def updateBbox(self):
+    import numpy as np
+    from PyRatClone import PyRatClone
+    # look at min and max
+    if type(self) != PyRatClone:
+      return
+    corners = np.array([[self.min[0],self.min[1],self.min[2]]\
+                       ,[self.min[0],self.min[1],self.max[2]]\
+                       ,[self.min[0],self.max[1],self.min[2]]\
+                       ,[self.min[0],self.max[1],self.max[2]]\
+                       ,[self.max[0],self.min[1],self.min[2]]\
+                       ,[self.max[0],self.min[1],self.max[2]]\
+                       ,[self.max[0],self.max[1],self.min[2]]\
+                       ,[self.max[0],self.max[1],self.max[2]]])
+    # now apply the matrix and then translation
+    for n,i in enumerate(corners):
+      try:
+        corners[n] = np.array(np.matrix(i)*self.matrix).flatten()
+      except:
+        pass
+      try:
+        corners[n] += self.offset
+      except:
+        pass
+    self.min = np.min(corners,axis=0)
+    self.max = np.max(corners,axis=0)
+
+
+
   def error(self,msg):
     '''
     Error reporting
@@ -311,7 +388,6 @@ class PyRatBox(object):
     from PyRatBox import PyRatBox
     from PyRatClone import PyRatClone
     thisRay = ray.copy()
-    #import pdb;pdb.set_trace()
     if not self.intersect(thisRay,closest=closest):
       return False
     # so we intersect the superstructure
@@ -325,11 +401,13 @@ class PyRatBox(object):
       ray.object = thisRay.object
     except:
       ray.object = None
-    ray.length = ray.tnear
     if not 'lad' in self.info:
+      ray.length = ray.tnear
+      ray.object = self
       return True 
     if ray.tnear >= PyRatBig or ray.tfar >= PyRatBig:
       return False
+    ray.length = ray.tnear
     ray.rayLengthThroughObject=ray.tfar-ray.tnear
     travel = -np.log(np.random.random())/(self.g*self.lad)
    
@@ -391,7 +469,7 @@ class PyRatBox(object):
     '''
     from PyRatClone import PyRatClone
     # cheap method if only one entry
-    invisible = self.invisible or type(self) == PyRatClone
+    invisible = self.invisible # or type(self) == PyRatClone
     if invisible and len(self.contents) == 1:
       return self.contents[0].intersects(ray,closest=closest)
 
