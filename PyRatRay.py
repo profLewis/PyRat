@@ -17,7 +17,8 @@ class PyRatRay(object):
     tfar = self.tfar
     length = self.length
     hitPoint = self.hitPoint
-    new = PyRatRay(self.origin.copy(),self.direction.copy())
+    new = PyRatRay([self.origin[0],self.origin[1],self.origin[2]],\
+                   [self.direction[0],self.direction[1],self.direction[2]])
     new.tnear = tnear
     new.tfar = tfar
     new.length = length

@@ -7,10 +7,12 @@ try:
   OpenGL.ERROR_ON_COPY = True
   from OpenGL.GL import *
   from OpenGL.GLUT import *
+  from OpenGL.arrays import vbo
   import sys, time
   from math import sin,cos,sqrt,pi
   from OpenGL.constants import GLfloat
   vec4 = GLfloat_4
+  from OpenGLContext.arrays import *
   hasGL = True
 except:
   hasGL = False

@@ -16,9 +16,10 @@ A PyRat object has methods that allow for:
         box aligned to axes
 
 """
-
 import numpy as np
 import sys
+import math
+from math import sqrt
 
 # a set of globals 
 PyRatTol = 1e-20
@@ -27,7 +28,8 @@ PyRatBig = 1e20
 PyRatRayTol = 1e-20
 PyRatUnityTol = 0.001
 
-
+def dot(a,b):
+  return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
 
 class PyRatBox(object):
   '''
@@ -600,7 +602,7 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
 
   # sun direction
   sun = np.array([1,1,1.])
-  sun /= np.sqrt(np.dot(sun,sun))
+  sun /= sqrt(dot(sun,sun))
 
   # image size
   size = (100,100)
@@ -678,7 +680,7 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
             iy = iiy[j]
             ray = val[1]
             n = np.array([0,0,1.])
-            result0[size[0]-1-ix,size[1]-1-iy] = np.dot(n,-ray.direction)
+            result0[size[0]-1-ix,size[1]-1-iy] = dot(n,-ray.direction)
             result1[size[0]-1-ix,size[1]-1-iy] = ray.tnear
             result2[size[0]-1-ix,size[1]-1-iy] = ray.tfar
       except:
@@ -697,7 +699,7 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
         if hit:
           ray = thisRay
           n = np.array([0,0,1.])
-          result0[size[0]-1-ix,size[1]-1-iy] = np.dot(n,-ray.direction)
+          result0[size[0]-1-ix,size[1]-1-iy] = dot(n,-ray.direction)
           result1[size[0]-1-ix,size[1]-1-iy] = ray.tnear
           result2[size[0]-1-ix,size[1]-1-iy] = ray.tfar
   if 'verbose' in info:

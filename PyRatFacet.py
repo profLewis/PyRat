@@ -33,16 +33,16 @@ class PyRatFacet(PyRatPlane):
     du = vertices[1] - vertices[0]
     dv = vertices[2] - vertices[0]
     n = np.cross(du,dv)
-    mod_normal = np.dot(n,n)
+    mod_normal = dot(n,n)
     # area of the triangle
-    self.size = np.sqrt(mod_normal*0.5)
+    self.size = sqrt(mod_normal*0.5)
 
     if mod_normal == 0:
       self.error('zero-sized facet') 
       self.empty = True
       return self
     # normalise
-    n /= np.sqrt(mod_normal)
+    n /= sqrt(mod_normal)
 
     # find max dimension of normal -> facet orientation
     nn = np.abs(n)
@@ -67,7 +67,7 @@ class PyRatFacet(PyRatPlane):
       
     PyRatPlane.__init__(self,vertices[0],n,\
                              contents=contents,material=material,info=info)
-    self.size = np.sqrt(mod_normal*0.5)
+    self.size = sqrt(mod_normal*0.5)
     self.min = np.min(vertices,axis=0)
     self.max = np.max(vertices,axis=0)
     self.extent = self.max - self.min

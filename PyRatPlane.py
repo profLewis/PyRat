@@ -28,11 +28,11 @@ class PyRatPlane(PyRatBox):
     PyRatBox.__init__(self,base,None,contents=contents,material=material,info=info)
     self.empty = False
     self.normal = np.array(normal).astype(float)
-    d = np.dot(self.normal,self.normal)
+    d = dot(self.normal,self.normal)
     if d == 0:
       self.empty = True
-    self.normal /= np.sqrt(d)
-    self.dw = -np.dot(base,self.normal)
+    self.normal /= sqrt(d)
+    self.dw = -dot(base,self.normal)
 
   def copy(self):
     '''

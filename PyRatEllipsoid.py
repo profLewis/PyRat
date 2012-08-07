@@ -79,13 +79,13 @@ class PyRatEllipsoid(PyRatPlane):
     A = ray.origin - self.centre
     B = A/self.radius
     C = ray.direction/self.radius
-    p = np.dot(B,B)-1.
-    q = np.dot(B,C)*2.
-    r = np.dot(C,C)
+    p = dot(B,B)-1.
+    q = dot(B,C)*2.
+    r = dot(C,C)
     b = q*q-4*p*r
     if b < 0:
       return False
-    b = np.sqrt(b)
+    b = sqrt(b)
     p1 = (-q+b)/(2*r)
     p2 = (-q-b)/(2*r)
     ray.tnear = ray.tfar = 0.

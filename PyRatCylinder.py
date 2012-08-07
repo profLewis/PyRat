@@ -57,7 +57,7 @@ class PyRatCylinder(PyRatPlane):
     self.tip = tip
 
     self.normal = tip - base
-    self.length = np.sqrt(np.dot(self.normal,self.normal))
+    self.length = sqrt(dot(self.normal,self.normal))
     if self.radius == 0 or self.length == 0:
       self.error('non defined radius or length for cylinder object')
       self.empty = True
@@ -114,7 +114,7 @@ class PyRatCylinder(PyRatPlane):
     for i,ok in enumerate(isHit[2:]): 
       if ok:
         HP = ray.origin+ray.direction*hitLengths[i+2]
-        projection[i+2] = np.dot(HP-self.base,self.normal)/self.length 
+        projection[i+2] = dot(HP-self.base,self.normal)/self.length 
         if projection[i+2] < 0 or projection[i+2] > 1:
           isHit[i+2] = False
     valid = np.sort(hitLengths[isHit])
@@ -152,13 +152,13 @@ class PyRatCylinder(PyRatPlane):
     va = self.normal
     
     deltaP = p - pa
-    vva = np.dot(v,va)
-    dpva = np.dot(deltaP,va)
+    vva = dot(v,va)
+    dpva = dot(deltaP,va)
     a = v - vva * va
     b = deltaP - dpva * va
-    A = np.dot(a,a)
-    B = 2.*np.dot(a,b)
-    C = np.dot(b,b) - self.R2
+    A = dot(a,a)
+    B = 2.*dot(a,b)
+    C = dot(b,b) - self.R2
 
     q = B*B - 4.*A*C
 
@@ -175,7 +175,7 @@ class PyRatCylinder(PyRatPlane):
       len[2] = -B /(2*A)
       ok[2] = True
     else:
-      t = np.sqrt(q)
+      t = sqrt(q)
       len[2] = (-B +t) /(2*A)
       len[3] = (-B -t) /(2*A)
       ok[2] = ok[3] = True

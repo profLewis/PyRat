@@ -76,8 +76,8 @@ class PyRatDisk(PyRatPlane):
     if self.empty:
       return False
     A = self.base - ray.origin
-    a = np.dot(A,self.normal)
-    b = np.dot(ray.direction,self.normal)
+    a = dot(A,self.normal)
+    b = dot(ray.direction,self.normal)
     if b == 0:
       return False
     ray.tnear = a/b
@@ -85,10 +85,10 @@ class PyRatDisk(PyRatPlane):
       return False
     # radial vector
     R = ray.direction*ray.tnear - A
-    r2 = np.dot(R,R)
+    r2 = dot(R,R)
     if r2>self.r2:
       return False
-    self.r = np.sqrt(r2)
+    self.r = sqrt(r2)
     return True
 
   def tesselate(self,N=8):
@@ -113,11 +113,11 @@ class PyRatDisk(PyRatPlane):
     # we need 2 vectors orthogonal to normal
     basis1 = np.array([0.,0.,1.]) 
     basis2 = np.cross(normal,basis1)
-    size2 = np.sqrt(np.dot(basis2,basis2))
+    size2 = sqrt(dot(basis2,basis2))
     if size2 == 0:
       basis1 = np.array([1.,1.,1.])
       basis2 = np.cross(normal,basis1)
-      size2 = np.sqrt(np.dot(basis2,basis2))
+      size2 = sqrt(dot(basis2,basis2))
     basis2 /= size2
     basis1 = np.cross(basis2,normal)
     dTheta = 2. * np.pi/float(N)

@@ -86,7 +86,7 @@ class PyRatClone(PyRatBox):
 
     try:
       transformed_ray.direction = np.array(np.matrix(ray.direction) * self.matrix.T).flatten()
-      mod_ray_direction=np.sqrt(np.dot(transformed_ray.direction,transformed_ray.direction))
+      mod_ray_direction=sqrt(dot(transformed_ray.direction,transformed_ray.direction))
       transformed_ray.direction /= mod_ray_direction
       transformed_ray.origin = np.array(np.matrix(transformed_ray.origin) * self.matrix.T).flatten()
       # to account for scaling effects
@@ -103,7 +103,7 @@ class PyRatClone(PyRatBox):
     if hit:
       try:
         thisRay.object.localNormal = np.array(np.matrix(thisRay.object.localNormal) * self.matrix).flatten()
-        mod = np.sqrt(np.dot(thisRay.object.localNormal,thisRay.object.localNormal))
+        mod = sqrt(dot(thisRay.object.localNormal,thisRay.object.localNormal))
         thisRay.object.localNormal /= mod
       except:
         pass
