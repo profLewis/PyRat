@@ -60,7 +60,6 @@ class PyRatObjParser(object):
     self.verbose=verbose
     self.reportingFrequency = 10
     if self.GL:
-      import pdb;pdb.set_trace()
       self.GLfacetList = self.loadGL(self.root,np.eye(3),np.matrix(np.zeros(3)))
 
   def loadGL(self,bbox,matrix,offset):
@@ -68,6 +67,7 @@ class PyRatObjParser(object):
     Load a GL representation
     '''
     if bbox == self.root:
+      import pdb;pdb.set_trace()
       facet_list = glGenLists(2)
       glNewList(facet_list, GL_COMPILE)
       glBegin(GL_TRIANGLES)
