@@ -91,6 +91,27 @@ class PyRatDisk(PyRatPlane):
     self.r = sqrt(r2)
     return True
 
+  def surfaceNormal(self,ray,true=True):
+    '''
+    Return the local surface normal
+    where ray intersects object
+
+    all we use in ray is:
+      ray.origin
+      ray.direction
+
+    Options:
+      true  : set True if you want the treu (rather
+              than interpolated) surface normal
+
+    '''
+    d = dot(ray.direction,self.normal)
+    if d > 0:
+      self.localNormal = -self.normal
+      return -self.normal
+    self.localNormal = self.normal
+    return self.normal
+
   def tesselate(self,N=8):
     '''
     Triangulate the object.
@@ -155,7 +176,7 @@ def main():
   # set up a test object: a disk
   from PyRatBox import test
   base = np.array([0,0,3.])
-  normal = np.array([0,1,1.])
+  normal = np.array([1,1,1.])
   info = {'verbose':True,'radius':1.0}
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
   test(base,normal,info=info,type=name)

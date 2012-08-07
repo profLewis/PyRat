@@ -11,6 +11,7 @@ class PyRatRay(object):
     self.hitPoint = np.zeros(3)
     self.object = None
     self.rays = None
+    self.sun = np.array([0,0,1.])
 
   def copy(self):
     tnear = self.tnear
@@ -25,6 +26,7 @@ class PyRatRay(object):
     new.hitPoint = hitPoint
     new.object = self.object
     new.rays = self.rays
+    new.sun = self.sun
     return new 
 
   def error(self,msg):

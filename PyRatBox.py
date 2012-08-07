@@ -28,6 +28,11 @@ PyRatBig = 1e20
 PyRatRayTol = 1e-20
 PyRatUnityTol = 0.001
 
+def abs(a):
+  if a < 0:
+    return -a
+  return a
+
 def dot(a,b):
   return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
 
@@ -541,7 +546,7 @@ class PyRatBox(object):
 
     return thisHit or hit,ray.copy()
 
-  def surfaceNormal(self,ray,length,true=True):
+  def surfaceNormal(self,ray,true=True):
     '''
     Return the local surface normal
     where ray intersects object
@@ -563,6 +568,7 @@ class PyRatBox(object):
     upDown = 2*ihitPoint[axis]-1
     direction = np.zeros(3)
     direction[axis] = upDown
+    self.localNormal = direction
     return direction
 
   def hit(self,ray,ok=False):
@@ -718,8 +724,11 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
             ix = iix[j]
             iy = iiy[j]
             ray = val[1]
-            n = np.array([0,0,1.])
-            result0[size[0]-1-ix,size[1]-1-iy] = dot(n,-ray.direction)
+            try:
+              n = ray.object.surfaceNormal(ray)
+            except:
+              n = np.array([0,0,1.])
+            result0[size[0]-1-ix,size[1]-1-iy] = (dot(n,sun))
             result1[size[0]-1-ix,size[1]-1-iy] = ray.tnear
             result2[size[0]-1-ix,size[1]-1-iy] = ray.tfar
       except:
@@ -737,8 +746,11 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
         hit,thisRay = obj.intersects(ray)
         if hit:
           ray = thisRay
-          n = np.array([0,0,1.])
-          result0[size[0]-1-ix,size[1]-1-iy] = dot(n,-ray.direction)
+          try:
+            n = ray.object.surfaceNormal(ray)
+          except:
+            n = np.array([0,0,1.])
+          result0[size[0]-1-ix,size[1]-1-iy] = (dot(n,sun))
           result1[size[0]-1-ix,size[1]-1-iy] = ray.tnear
           result2[size[0]-1-ix,size[1]-1-iy] = ray.tfar
   if 'verbose' in info:

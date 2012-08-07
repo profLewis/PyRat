@@ -32,6 +32,25 @@ class PyRatSpheroid(PyRatEllipsoid):
     base[2] -= radius
     PyRatEllipsoid.__init__(self,base,radius,contents=contents,material=material,info=info)
 
+  def surfaceNormal(self,ray,true=True):
+    '''
+    Return the local surface normal
+    where ray intersects object
+
+    all we use in ray is:
+      ray.origin
+      ray.direction
+
+    Options:
+      true  : set True if you want the treu (rather
+              than interpolated) surface normal
+
+    '''
+    hitPoint = self.hit(ray,ok=True)
+    v1 = (hitPoint - self.centre)/self.radius
+    self.localNormal = v1
+    return v1
+
 def main():
   '''
   A simple test of the Spheroid algorithm
@@ -53,7 +72,7 @@ def main():
 
   base = np.array([0,0,2.])
   radius = 1.0
-  info = {'verbose':True,'lad':3.0}
+  info = {'verbose':True}#,'lad':3.0}
 
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
   test(base,radius,info=info,type=name)

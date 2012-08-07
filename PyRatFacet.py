@@ -73,6 +73,28 @@ class PyRatFacet(PyRatPlane):
     self.extent = self.max - self.min
     self.base = self.min
 
+  def surfaceNormal(self,ray,true=True):
+    '''
+    Return the local surface normal
+    where ray intersects object
+
+    all we use in ray is:
+      ray.origin
+      ray.direction
+
+    Options:
+      true  : set True if you want the treu (rather
+              than interpolated) surface normal
+
+    '''
+    d = dot(ray.direction,self.normal)
+    if d > 0:
+      self.localNormal = -self.normal
+      return -self.normal
+    self.localNormal = self.normal
+    return self.normal
+
+
   def copy(self):
     '''
     Copy the object and combine the

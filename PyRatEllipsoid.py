@@ -60,6 +60,25 @@ class PyRatEllipsoid(PyRatPlane):
     self.max = np.max(V,axis=0)
     self.extent = self.max - self.min
 
+  def surfaceNormal(self,ray,true=True):
+    '''
+    Return the local surface normal
+    where ray intersects object
+
+    all we use in ray is:
+      ray.origin
+      ray.direction
+
+    Options:
+      true  : set True if you want the treu (rather
+              than interpolated) surface normal
+
+    '''
+    hitPoint = self.hit(ray,ok=True)
+    v1 = (hitPoint - self.centre)/self.radius
+    self.localNormal = v1
+    return v1
+
   def intersect(self,ray,closest=True):
     '''
     Intersect ray with ellipsoid

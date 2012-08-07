@@ -120,7 +120,10 @@ class PyRatCylinder(PyRatPlane):
     valid = np.sort(hitLengths[isHit])
     lv = len(valid)
     if lv == 0:
+      self.index = -1
       return False
+
+    self.index = np.where(np.array(hitLengths == valid[0]))[0]
     if lv >= 1:
       ray.tnear = valid[0]
     if lv >= 2:
@@ -131,6 +134,37 @@ class PyRatCylinder(PyRatPlane):
     ray.rayLengthThroughObject=ray.tfar-ray.tnear
     return True
 
+  def surfaceNormal(self,ray,true=True):
+    '''
+    Return the local surface normal
+    where ray intersects object
+
+    all we use in ray is:
+      ray.origin
+      ray.direction
+
+    Options:
+      true  : set True if you want the treu (rather
+              than interpolated) surface normal
+
+    '''
+    #import pdb;pdb.set_trace()
+    if self.index < 0:
+      self.localNormal = self.normal
+      return self.normal
+
+    if self.index < 2:
+      self.localNormal = self.normal
+      return self.normal
+
+    #import pdb;pdb.set_trace()
+    hitPoint = self.hit(ray,ok=True) 
+    v1 = hitPoint - self.base
+    h = dot(v1,self.normal)
+    v2 = v1 - h*self.normal
+    v2 /= self.radius
+    self.localNormal = v2
+    return v2
 
   def ray_on_infinite_cylinder(self,ray,closest=True):
     '''
