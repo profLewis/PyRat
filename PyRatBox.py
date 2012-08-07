@@ -113,7 +113,7 @@ class PyRatBox(object):
         self.empty = True
         self.extent = np.zeros(3)+PyRatMinExtent
     if not self.empty:
-      self.size = np.prod(self.extent)
+      self.size = np.prod(self.extent)    
 
   def report(self,level=0):
     '''
@@ -162,6 +162,16 @@ class PyRatBox(object):
       c.report(level=level+1)
     self.error('%05d %s}'%(level,buff))
 
+  def updateContents(self):
+    '''
+    Resort the contents
+    '''
+    allMin = np.array([i.min for i in self.contents])
+    allMax = np.array([i.max for i in self.contents])
+    self.minP = np.argsort(allMin,axis=0)    
+    self.maxP = np.argsort(allMax,axis=0)
+    self.minN = np.argsort(-allMin,axis=0)           
+    self.maxN = np.argsort(-allMax,axis=0)
 
   def updateBbox(self):
     import numpy as np
@@ -493,13 +503,32 @@ class PyRatBox(object):
     # if we do hit, then have a look at the contents
     ray = thisRay
     hit = False
-    for i in self.contents:
-      thatHit,thatRay = i.intersects(ray.copy(),closest=True)
-      if thatHit and thatRay.tnear < ray.length:
-        #import pdb;pdb.set_trace()
-        hit = thatHit
-        ray = thatRay
-        ray.length = thatRay.tnear
+    if len(self.contents) == 0:
+      return thisHit or hit,ray.copy()
+
+    axis = np.argsort(np.array([-ray.direction,ray.direction]).flatten())[0]
+
+    try:
+      x = self.minN[axis-3]
+    except:
+      self.updateContents()
+    if axis >3:
+      order = self.maxN[:,axis-3]
+    else:
+      order = self.minP[axis]
+    max = ray.origin[axis%3] - np.array([i.max[axis-3] for i in np.array(self.contents)[order]])
+    min = ray.origin[axis%3] - np.array([i.min[axis-3] for i in np.array(self.contents)[order]])
+
+    doit = 0 <= max 
+    for c,i in enumerate(np.array(self.contents)[order]):
+      if doit[c]:
+        thatHit,thatRay = i.intersects(ray.copy(),closest=True)
+        if thatHit and thatRay.tnear < ray.length:
+          projLength = thatRay.tnear * np.abs(thatRay.direction[axis%3])
+          doit = projLength >= max
+          hit = thatHit
+          ray = thatRay
+          ray.length = thatRay.tnear
     return thisHit or hit,ray.copy()
 
   def surfaceNormal(self,ray,length,true=True):
