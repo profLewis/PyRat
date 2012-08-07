@@ -51,7 +51,7 @@ class PyRatFacet(PyRatPlane):
     # fbase is of dimension (2,3)
     tmp = 0.0
     count = 0
-    if tmp == 0:
+    while tmp == 0:
       self.orientation = (self.orientation+1)%3
       count+=1
       if count > 4:

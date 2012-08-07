@@ -2,13 +2,26 @@
 import numpy as np
 from PyRatBox import *
 
+try:
+  import OpenGL
+  OpenGL.ERROR_ON_COPY = True
+  from OpenGL.GL import *
+  from OpenGL.GLUT import *
+  import sys, time
+  from math import sin,cos,sqrt,pi
+  from OpenGL.constants import GLfloat
+  vec4 = GLfloat_4
+  hasGL = True
+except:
+  hasGL = False
+
 class PyRatObjParser(object):
   '''
   Parser for extended wavefront format
   '''
-  def __init__(self,filename,verbose=True,reportingFrequency=10):
+  def __init__(self,filename,GL=False,verbose=True,reportingFrequency=10):
     self.setupDictionary()
-
+    self.GL = hasGL and GL
     self.verbose=verbose
     self.reportingFrequency = reportingFrequency
 
@@ -46,6 +59,40 @@ class PyRatObjParser(object):
     self.point = np.array(self.point)
     self.verbose=verbose
     self.reportingFrequency = 10
+    if self.GL:
+      import pdb;pdb.set_trace()
+      self.GLfacetList = self.loadGL(self.root,np.eye(3),np.matrix(np.zeros(3)))
+
+  def loadGL(self,bbox,matrix,offset):
+    '''
+    Load a GL representation
+    '''
+    if bbox == self.root:
+      facet_list = glGenLists(2)
+      glNewList(facet_list, GL_COMPILE)
+      glBegin(GL_TRIANGLES)
+    # load triangles
+    try:
+      facet_list = self.loadGL(self.GLRepresentation,matrix,offset)
+    except:
+      for i,c in enumerate(self.contents):
+        try:
+          self.loadGL(c,matrix,offset)
+        except:
+          pass
+
+      try:
+        glVertex3f(self.fbase[0],self.fbase[1],self.fbase[2])
+        glVertex3f(self.fbase[0]+self.du[0],self.fbase[1]+self.du[1],self.fbase[2]+self.du[2])
+        glVertex3f(self.fbase[0]+self.dv[0],self.fbase[1]+self.dv[1],self.fbase[2]+self.dv[2])
+      except:
+        pass
+
+    if bbox == self.root:
+      glEnd()
+      glEndList()
+      return facet_list
+    return None
 
   def dump(self,filename):
     '''
@@ -586,13 +633,14 @@ class PyRatObjParser(object):
       self.error('could not interpret "v" line %d of %s: %s'%\
                 (self.lineNumber,self.filename,' '.join(cmd)))
 
-  def disk(self,cmd):
+  def disk(self,cmd,N=8):
     '''
     Disk
     
       disk centre normal radius
     '''
     from PyRatDisk import PyRatDisk
+    isOK = True
     try:
       this = np.array(cmd[1:3]).astype(int)
       this[this<0] += self.nPoints
@@ -602,8 +650,13 @@ class PyRatObjParser(object):
                      material=self.top.material,info={'radius':radius}))
       self.verbose == 2 and sys.stderr.write('d')
     except:
+      isOK = False
       self.error('could not interpret "disk" line %d of %s: %s'%\
                 (self.lineNumber,self.filename,' '.join(cmd)))
+    
+    if self.GL and isOK:
+      this = self.top.contents[-1]
+      this.GLRepresentation = this.tesselate(N=N)
 
   def f(self,cmd):
     '''

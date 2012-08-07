@@ -91,11 +91,11 @@ class PyRatDisk(PyRatPlane):
     self.r = np.sqrt(r2)
     return True
 
-  def triangulate(self,N=8):
+  def tesselate(self,N=8):
     '''
     Triangulate the object.
 
-    This method forms a new (traingulated) version of the object
+    This method forms a new (triangulated) version of the object
     with N segments.
 
     It returns a PyRatBox object which contains the set of N PyRatFacet

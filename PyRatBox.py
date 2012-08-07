@@ -663,6 +663,8 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
     l = size[0]*size[1]
     
     for c in xrange(len(results)):
+      if 'verbose' in info and int(100.*(c+1)/l) % 5 == 0:
+          sys.stderr.write('\b\b\b\b\b\b\b\b%.2f%%'%(100*(c+1)/l))
       r = results[c]
       f = r[2]
       thisResult = f()
