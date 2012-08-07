@@ -53,7 +53,7 @@ class PyRatBox(object):
         box aligned to axes
   '''
 
-  def __init__(self,base,extent,contents=None,material=None,info=None):
+  def __init__(self,base,extent,planeSets=False,contents=None,material=None,info=None):
     '''
     Load the object:
 
@@ -72,6 +72,7 @@ class PyRatBox(object):
     '''
     # load the core descriptors
     self.info = info or {}
+    self.planeSets = planeSets
 
     self.base = np.array(base).astype(float)
     if np.array(extent).size == 3:
@@ -508,27 +509,36 @@ class PyRatBox(object):
 
     axis = np.argsort(np.array([-ray.direction,ray.direction]).flatten())[0]
 
-    try:
-      x = self.minN[axis-3]
-    except:
-      self.updateContents()
-    if axis >3:
-      order = self.maxN[:,axis-3]
-    else:
-      order = self.minP[axis]
-    max = ray.origin[axis%3] - np.array([i.max[axis-3] for i in np.array(self.contents)[order]])
-    min = ray.origin[axis%3] - np.array([i.min[axis-3] for i in np.array(self.contents)[order]])
+    if self.planeSets:
+      try:
+        x = self.minN[axis-3]
+      except:
+        self.updateContents()
+      if axis >3:
+        order = self.maxN[:,axis-3]
+      else:
+        order = self.minP[axis]
+      max = ray.origin[axis%3] - np.array([i.max[axis-3] for i in np.array(self.contents)[order]])
+      min = ray.origin[axis%3] - np.array([i.min[axis-3] for i in np.array(self.contents)[order]])
 
-    doit = 0 <= max 
-    for c,i in enumerate(np.array(self.contents)[order]):
-      if doit[c]:
+      doit = 0 <= max 
+      for c,i in enumerate(np.array(self.contents)[order]):
+        if doit[c]:
+          thatHit,thatRay = i.intersects(ray.copy(),closest=True)
+          if thatHit and thatRay.tnear < ray.length:
+            projLength = thatRay.tnear * np.abs(thatRay.direction[axis%3])
+            doit = projLength >= max
+            hit = thatHit
+            ray = thatRay
+            ray.length = thatRay.tnear
+    else:
+      for i in self.contents:
         thatHit,thatRay = i.intersects(ray.copy(),closest=True)
         if thatHit and thatRay.tnear < ray.length:
-          projLength = thatRay.tnear * np.abs(thatRay.direction[axis%3])
-          doit = projLength >= max
           hit = thatHit
           ray = thatRay
           ray.length = thatRay.tnear
+
     return thisHit or hit,ray.copy()
 
   def surfaceNormal(self,ray,length,true=True):
