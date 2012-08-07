@@ -425,6 +425,10 @@ class PyRatBox(object):
     if not 'lad' in self.info:
       ray.length = ray.tnear
       ray.object = self
+      try:
+        ray.object.surfaceNormal(ray)
+      except:
+        pass
       return True 
     if ray.tnear >= PyRatBig or ray.tfar >= PyRatBig:
       return False
@@ -534,14 +538,14 @@ class PyRatBox(object):
             projLength = thatRay.tnear * np.abs(thatRay.direction[axis%3])
             doit = projLength >= max
             hit = thatHit
-            ray = thatRay
+            ray.ccopy(thatRay)
             ray.length = thatRay.tnear
     else:
       for i in self.contents:
         thatHit,thatRay = i.intersects(ray.copy(),closest=True)
         if thatHit and thatRay.tnear < ray.length:
           hit = thatHit
-          ray = thatRay
+          ray.ccopy(thatRay)
           ray.length = thatRay.tnear
 
     return thisHit or hit,ray.copy()
@@ -568,7 +572,7 @@ class PyRatBox(object):
     upDown = 2*ihitPoint[axis]-1
     direction = np.zeros(3)
     direction[axis] = upDown
-    self.localNormal = direction
+    ray.localNormal = direction
     return direction
 
   def hit(self,ray,ok=False):
@@ -725,7 +729,7 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
             iy = iiy[j]
             ray = val[1]
             try:
-              n = ray.object.surfaceNormal(ray)
+              n = ray.localNormal
             except:
               n = np.array([0,0,1.])
             result0[size[0]-1-ix,size[1]-1-iy] = (dot(n,sun))
@@ -745,9 +749,9 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
         ray.origin = o
         hit,thisRay = obj.intersects(ray)
         if hit:
-          ray = thisRay
+          ray.ccopy(thisRay)
           try:
-            n = ray.object.surfaceNormal(ray)
+            n = ray.localNormal
           except:
             n = np.array([0,0,1.])
           result0[size[0]-1-ix,size[1]-1-iy] = (dot(n,sun))

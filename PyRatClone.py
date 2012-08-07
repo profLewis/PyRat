@@ -102,9 +102,10 @@ class PyRatClone(PyRatBox):
     hit,thisRay  = PyRatBox.intersects(self.contents[0],transformed_ray,closest=closest)
     if hit:
       try:
-        thisRay.object.localNormal = np.array(np.matrix(thisRay.object.localNormal) * self.matrix).flatten()
-        mod = sqrt(dot(thisRay.object.localNormal,thisRay.object.localNormal))
-        thisRay.object.localNormal /= mod
+        #import pdb;pdb.set_trace()
+        thisRay.localNormal = np.array(np.matrix(thisRay.localNormal) * self.matrix).flatten()
+        mod = sqrt(dot(thisRay.localNormal,thisRay.localNormal))
+        thisRay.localNormal /= mod
       except:
         pass
 
@@ -122,7 +123,8 @@ class PyRatClone(PyRatBox):
         thisRay.direction = ray.direction
       except:
         pass
-    return hit,thisRay
+    ray.ccopy(thisRay)
+    return hit,ray
 
 def main():
   '''

@@ -76,7 +76,7 @@ class PyRatEllipsoid(PyRatPlane):
     '''
     hitPoint = self.hit(ray,ok=True)
     v1 = (hitPoint - self.centre)/self.radius
-    self.localNormal = v1
+    ray.localNormal = v1
     return v1
 
   def intersect(self,ray,closest=True):

@@ -50,6 +50,27 @@ class PyRatPlane(PyRatBox):
                contents=self.__tryCopy__(self.contents),\
                material=self.__tryCopy__(self.material),info=self.info)
 
+  def surfaceNormal(self,ray,true=True):
+    '''
+    Return the local surface normal
+    where ray intersects object
+
+    all we use in ray is:
+      ray.origin
+      ray.direction
+
+    Options:
+      true  : set True if you want the treu (rather
+              than interpolated) surface normal
+
+    '''
+    d = dot(ray.direction,self.normal)
+    if d > 0:
+      ray.localNormal = -self.normal
+      return -self.normal
+    ray.localNormal = self.normal
+    return self.normal
+
   def intersect(self,ray,closest=True):
     '''
     Intersect ray with infinite plane

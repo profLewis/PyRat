@@ -107,9 +107,9 @@ class PyRatDisk(PyRatPlane):
     '''
     d = dot(ray.direction,self.normal)
     if d > 0:
-      self.localNormal = -self.normal
+      ray.localNormal = -self.normal
       return -self.normal
-    self.localNormal = self.normal
+    ray.localNormal = self.normal
     return self.normal
 
   def tesselate(self,N=8):

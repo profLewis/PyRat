@@ -13,6 +13,22 @@ class PyRatRay(object):
     self.rays = None
     self.sun = np.array([0,0,1.])
 
+  def ccopy(self,new):
+    tnear = new.tnear
+    tfar = new.tfar
+    length = new.length
+    hitPoint = new.hitPoint
+    self.origin = new.origin
+    self.direction = new.direction
+    self.tnear = tnear
+    self.tfar = tfar
+    self.length = length
+    self.hitPoint = hitPoint
+    self.object = new.object
+    self.rays = new.rays
+    self.sun = new.sun
+    self.localNormal = new.localNormal
+
   def copy(self):
     tnear = self.tnear
     tfar = self.tfar
@@ -27,6 +43,10 @@ class PyRatRay(object):
     new.object = self.object
     new.rays = self.rays
     new.sun = self.sun
+    try:
+      new.localNormal = self.localNormal
+    except:
+      new.localNormal = np.array([0.,0.,1.])
     return new 
 
   def error(self,msg):

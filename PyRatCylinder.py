@@ -150,11 +150,11 @@ class PyRatCylinder(PyRatPlane):
     '''
     #import pdb;pdb.set_trace()
     if self.index < 0:
-      self.localNormal = self.normal
+      ray.localNormal = self.normal
       return self.normal
 
     if self.index < 2:
-      self.localNormal = self.normal
+      ray.localNormal = self.normal
       return self.normal
 
     #import pdb;pdb.set_trace()
@@ -163,7 +163,7 @@ class PyRatCylinder(PyRatPlane):
     h = dot(v1,self.normal)
     v2 = v1 - h*self.normal
     v2 /= self.radius
-    self.localNormal = v2
+    ray.localNormal = v2
     return v2
 
   def ray_on_infinite_cylinder(self,ray,closest=True):
