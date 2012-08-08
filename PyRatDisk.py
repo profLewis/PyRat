@@ -180,7 +180,7 @@ def main():
   normal = np.array([1,1,1.])
   info = {'verbose':True,'radius':1.0}
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
-  test(base,normal,info=info,type=name)
+  test(base,normal,info=info,type=name,name=name[5:])
 
 if __name__ == "__main__":
     main()

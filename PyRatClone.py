@@ -178,7 +178,7 @@ def main():
   p.root.planes = p.infinitePlane
  
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])  
-  test(np.zeros(3),None,obj=p.root,info={},type=name,nAtTime=100*100/20)
+  test(np.zeros(3),None,obj=p.root,info={},type=name,nAtTime=100*100/20,name=name[5:])
   os.unlink(f.name)
 
 if __name__ == "__main__":

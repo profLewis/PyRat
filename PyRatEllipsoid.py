@@ -150,7 +150,7 @@ def main():
   info = {'verbose':True}
 
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
-  test(base,radius,info=info,type=name)
+  test(base,radius,info=info,type=name,name=name[5:])
 
 if __name__ == "__main__":
     main()

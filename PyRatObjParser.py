@@ -703,7 +703,6 @@ def main():
   from PyRatClone import PyRatClone
   from PyRatBox import test
 
-  filename = 'spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_20.obj'
   filename = 'tests/clone3.obj'
   world = PyRatObjParser(filename,verbose=True)
   if world.root.size == 0:
@@ -713,7 +712,7 @@ def main():
 
   info = {'verbose':True}
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
-  test(np.zeros(3),np.zeros(3),obj=world.root,info=info,type=name,nAtTime=100*100/20)
+  test(np.zeros(3),np.zeros(3),obj=world.root,info=info,type=name,nAtTime=100*100/20,name=name[5:])
   return True  
 
 if __name__ == "__main__":

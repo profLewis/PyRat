@@ -239,7 +239,7 @@ def main():
   tip = np.array([0.,0.,3.0])
   info = {'verbose':True,'radius':0.5,'caps':True}
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
-  test(base,tip,info=info,type=name)
+  test(base,tip,info=info,type=name,name=name[5:])
 
 if __name__ == "__main__":
     main()

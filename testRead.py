@@ -43,30 +43,13 @@ from PyRat import test, PyRatObjParser, PyRatClone
 import numpy as np
 import time
 import pdb
-file = 'PyRat/spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_20.obj'
-file = 'PyRat/spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_201.obj'
+file = 'spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_20.obj'
+#file = 'spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_201.obj'
 world = PyRatObjParser(file,verbose=True)
-clone = PyRatClone(np.zeros(3),None)
-clone.thisGroup = None
-clone.offset = np.array([0,0,0.])
-clone.matrix = np.eye(3)
-
-c = np.cos(-15*np.pi/180.)
-s = np.sin(-15*np.pi/180.)
-clone.matrix[1,1] = clone.matrix[0,0] = c
-clone.matrix[0,1] = -s
-clone.matrix[1,0] = s
-clone.matrix *= 0.025
-clone.empty = False
-clone.invisible = True
-clone.contents = [world.root]
-world.reconcile(clone,0)
-
-clone.updateBbox()
 info = {'verbose':True}
 
 t0 = time.clock()
 t0w = time.time()
-test(np.zeros(3),np.zeros(3),obj=clone,info=info,type=None,file='RAMI',nAtTime=100*100/20)
+test(np.zeros(3),np.zeros(3),obj=world.root,info=info,type=None,file='RAMI',nAtTime=100*100/50,name='RAMI')
 print time.clock() - t0, "seconds process time"
 print time.time() - t0w, "seconds wall time"

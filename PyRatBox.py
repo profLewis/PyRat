@@ -725,7 +725,7 @@ class PyRatBox(object):
     else:
       return False,ray,np.array([0,0,1.])  
 
-def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
+def test(base,tip,obj=None,name=None,type=None,file=None,info={},nAtTime=200):
   '''
   A simple test of the intersection algorithm
  
@@ -745,6 +745,7 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
   from PyRatObjParser import PyRatObjParser
   from PyRatClone import PyRatClone
   import pylab as plt
+  import matplotlib.cm as cm
 
   try:
     import pp
@@ -762,7 +763,7 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
   type = type.split('/')[-1]
   exec('from %s import %s'%(type,type))
 
-  name = type[5:]
+  name = name or type[5:]
   obj = obj or eval('%s(base,tip,info=info)'%type)
   # ray direction
   direction = np.array([-1,-1.,-1])
@@ -789,7 +790,7 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
   result1 = np.zeros(size)
   result2 = np.zeros(size)
   sys.stderr.write('from %s in direction %s\n'%(str(origin),str(direction)))
-
+  sys.stderr.write('Name: %s\n'%name)
   if len(sys.argv) > 1:
     ncpus = int(sys.argv[1])
   else:
@@ -894,21 +895,21 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
   if 'verbose' in info:
     sys.stderr.write('\nWriting results\n')
   plt.clf()
-  plt.imshow(result0,interpolation='nearest')
+  plt.imshow(result0,interpolation='nearest',cmap=cm.Greys_r)
   if 'verbose' in info: sys.stderr.write('Mean: %f\n'%np.mean(result0))
 
   plt.colorbar()
   if not os.path.exists('tests'):
     os.makedirs('tests')
-  plt.savefig('tests/PyRat%s.png'%file or name)
+  plt.savefig('tests/PyRat%s.png'%name or file)
   plt.clf()
-  plt.imshow(result1,interpolation='nearest')
+  plt.imshow(result1,interpolation='nearest',cmap=cm.Greys_r)
   plt.colorbar()
-  plt.savefig('tests/PyRat%s-near.png'%file or name)
+  plt.savefig('tests/PyRat%s-near.png'%name or file)
   plt.clf()
-  plt.imshow(result2,interpolation='nearest')
+  plt.imshow(result2,interpolation='nearest',cmap=cm.Greys_r)
   plt.colorbar()
-  plt.savefig('tests/PyRat%s-far.png'%file or name)
+  plt.savefig('tests/PyRat%s-far.png'%name or file)
 
 
 def main():
@@ -923,7 +924,7 @@ def main():
   min = -extent/2.
   
   info = {'verbose':True}# ,'lad':3.0}
-  test(min,extent,info=info)
+  test(min,extent,info=info,name='PyRatBox')
 
 if __name__ == "__main__":
     main()
