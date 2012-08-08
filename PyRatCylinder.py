@@ -131,6 +131,9 @@ class PyRatCylinder(PyRatPlane):
       ray.tfar = valid[1]
     else:
       ray.tfar = ray.tnear
+    if ray.tnear < PyRatRayTol:
+      ray.tnear = ray.tfar = ray.length = PyRatBig
+      return False
     ray.rayLengthThroughObject=ray.tfar-ray.tnear
     return True
 

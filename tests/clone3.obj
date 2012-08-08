@@ -16,9 +16,14 @@ v 0 0 0
 v 0 0 1
 cyl -1 -2 0.1
 sph -1 0.2
-v -1 0 1
-v 0 0 1
+v 1 0 0
+v 1 0 1
 cyl -1 -2 0.1
+sph -1 0.2
+v 0 0 1
+v 1 0 1
+cyl -1 -2 0.1
+
 !}
 
 
@@ -28,9 +33,9 @@ cyl -1 -2 0.1
 #define
 g box 1
 clone 0 0 0 0 object 1
-clone 0 1 0 90 object 1
-clone -1 0 0 -90 object 1
-clone -1 1 0 180 object 1
+clone 0 0 0 90 object 1
+clone 1 0 0 90 object 1
+clone 0 -1 0 0 object 1
 !}
 
 # a 4-frame
@@ -64,5 +69,4 @@ clone 0 0 3 bigframe 1
 
 # end of global box
 !}
-
 

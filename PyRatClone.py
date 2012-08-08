@@ -62,6 +62,7 @@ class PyRatClone(PyRatBox):
     '''
     # load the core descriptors
     PyRatBox.__init__(self,base,extent,contents=contents,material=material,info=info)
+    self.planes = []
 
   def intersects(self,ray,closest=True):
     '''
@@ -92,6 +93,9 @@ class PyRatClone(PyRatBox):
       # to account for scaling effects
       transformed_ray.origin /= (mod_ray_direction*mod_ray_direction)
       transformed_ray.length /= mod_ray_direction
+      transformed_ray.tnear /= mod_ray_direction
+      transformed_ray.tfar /= mod_ray_direction
+      transformed_ray.big /= mod_ray_direction
     except:
       pass
     # with a clone, we are not interested in the intersection other
@@ -113,6 +117,7 @@ class PyRatClone(PyRatBox):
         thisRay.length *= self.scale
         thisRay.tnear *= self.scale
         thisRay.tfar *= self.scale
+        thisRay.big *= self.scale
       except:
         pass
 
@@ -123,7 +128,7 @@ class PyRatClone(PyRatBox):
         thisRay.direction = ray.direction
       except:
         pass
-    ray.ccopy(thisRay)
+      ray.ccopy(thisRay)
     return hit,ray
 
 def main():
@@ -142,44 +147,39 @@ def main():
   from PyRatClone import PyRatClone
   from PyRatEllipsoid import PyRatEllipsoid
   from PyRatObjParser import PyRatObjParser
-  min = [-0.5,-0.5,2]
-  extent = [1,2,1]
-  info = {'verbose':True,'lad':3.0}
-  box = PyRatBox(min,extent,info=info)
+  from PyRatPlane import PyRatPlane
+  from tempfile import NamedTemporaryFile
+  import os
 
-  centre = [0,-0.5,2.5]
-  radius = 0.25
-  info = {'verbose':True}
-  sph = PyRatSpheroid(centre,radius,info=info)
-
-  centre = [1,0.5,2.5]
-  radius = 0.5
-  info = {'verbose':True}
-  sph2 = PyRatSpheroid(centre,radius,info=info)
-
-  base = np.array(min) + np.array(extent) *0.5
-  radius = [0.25,0.5,0.5]
-  info = {'verbose':True,'lad':10.}
-  ell = PyRatEllipsoid(base,radius,info=info)
-
-  clone = PyRatClone(np.zeros(3),None)
-  clone.thisGroup = None
-  clone.offset = np.array([-0.5,0.5,0.])
-  clone.matrix = np.eye(3)
-  c = np.cos(30*np.pi/180.)
-  s = np.sin(30*np.pi/180.)
-  clone.matrix[1,1] = clone.matrix[0,0] = c
-  clone.matrix[0,1] = -s
-  clone.matrix[1,0] = s
- 
-  clone.contents = [box,sph,ell,sph2]
-  p = PyRatObjParser(None)
-  p.top = p.root = clone
-  p.reconcile(p.top,0)
+  data = '''
+  !{
+  !{
+  v 0 0 0
+  v 0 0 1
+  plane -1 -2
+  #define objects
+  g group
+  box 2 2 0.5 1 1 1
+  v 0 0 1
+  sph -1 0.5
+  v 2 1 2
+  sph -1 0.5
+  v -1 1 0
+  ell -1 0.2 0.3 1
+  !}
+  clone -0.5 1.5 0 Rz 45 Ry 10 Rx -5 group
+  !}
+  '''
+  f = NamedTemporaryFile(delete=False)
+  f.write(data)
+  f.close()
+  
+  p = PyRatObjParser(f.name)
+  p.root.planes = p.infinitePlane
  
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])  
-  test(min,extent,obj=clone,info=info,type=name,nAtTime=100*100/20)
-
+  test(np.zeros(3),None,obj=p.root,info={},type=name,nAtTime=100*100/20)
+  os.unlink(f.name)
 
 if __name__ == "__main__":
     main()

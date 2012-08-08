@@ -44,6 +44,7 @@ import numpy as np
 import time
 import pdb
 file = 'PyRat/spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_20.obj'
+file = 'PyRat/spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_201.obj'
 world = PyRatObjParser(file,verbose=True)
 clone = PyRatClone(np.zeros(3),None)
 clone.thisGroup = None

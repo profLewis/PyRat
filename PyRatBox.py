@@ -25,7 +25,7 @@ from math import sqrt
 PyRatTol = 1e-20
 PyRatMinExtent = 1e-20
 PyRatBig = 1e20
-PyRatRayTol = 1e-20
+PyRatRayTol = 1.e-10 # 0.00001
 PyRatUnityTol = 0.001
 
 def abs(a):
@@ -78,6 +78,7 @@ class PyRatBox(object):
     # load the core descriptors
     self.info = info or {}
     self.planeSets = planeSets
+    self.planes = []
 
     self.base = np.array(base).astype(float)
     if np.array(extent).size == 3:
@@ -364,11 +365,15 @@ class PyRatBox(object):
     Object interestion test in projection (axis)
 
     '''
-    r = np.arange(3)
-    for i in r[r != axis]:
-      intersection = ray.origin[i] + d * ray.direction[i]
-      if intersection >= self.min[i] and intersection <= self.max[i]:
-        return True
+    intersection = (ray.origin + d * ray.direction - self.min)/self.extent
+    if not ((intersection < 0) | (intersection > 1)).all():
+      return True
+    return False
+    #r = np.arange(3)
+    #for i in r[r != axis]:
+    #  intersection = ray.origin[i] + d * ray.direction[i]
+    #  if intersection >= self.min[i] and intersection <= self.max[i]:
+    #    return True
 
   def bbox_shuffle(self,min,max,origin,direction,ray,axis):
     '''
@@ -393,11 +398,17 @@ class PyRatBox(object):
     if t1>t2:
       if t2<ray.tnear and self.intersectProjection(t2,ray,axis):
         ray.tnear=t2
-      if t1<ray.tfar and self.intersectProjection(t1,ray,axis):
-        ray.tfar=t1
+        if t1<ray.tfar and self.intersectProjection(t1,ray,axis):
+          ray.tfar=t1
+      else:
+        return False
     else:
-      if t1<ray.tnear: ray.tnear=t1
-      if t2<ray.tfar:  ray.tfar=t2
+      if t1<ray.tnear and self.intersectProjection(t1,ray,axis):
+        ray.tnear=t1
+        if t2<ray.tfar and self.intersectProjection(t2,ray,axis):
+          ray.tfar=t2
+      else:
+        return False
     if ray.tnear>ray.tfar: return False
     if ray.tfar<0.0:    return False
     return True
@@ -409,13 +420,15 @@ class PyRatBox(object):
     from PyRatBox import PyRatBox
     from PyRatClone import PyRatClone
     thisRay = ray.copy()
-    if not self.intersect(thisRay,closest=closest):
+    if not self.intersect(thisRay,closest=closest) or thisRay.length <= 0:
       return False
     # so we intersect the superstructure
     # if its a box, then look into its contents
     if type(self) == PyRatBox or type(self) == PyRatClone:
       if self.invisible:
         return True
+    if thisRay.tnear <= 0:
+      return False
     ray.tnear = thisRay.tnear
     ray.tfar = thisRay.tfar
     try:
@@ -430,7 +443,7 @@ class PyRatBox(object):
       except:
         pass
       return True 
-    if ray.tnear >= PyRatBig or ray.tfar >= PyRatBig:
+    if ray.tnear >= ray.big or ray.tfar >= ray.big:
       return False
     ray.length = ray.tnear
     ray.rayLengthThroughObject=ray.tfar-ray.tnear
@@ -441,9 +454,10 @@ class PyRatBox(object):
     ray.tnear += travel
     ray.tfar = ray.tnear
     ray.object = self
+    ray.localNormal = np.array([0.,0.,1.])
     return True
 
-  def intersect(self,ray,closest=True):
+  def intersectOld(self,ray,closest=True):
     '''
     Interesection test for ray for box object
 
@@ -455,8 +469,8 @@ class PyRatBox(object):
     '''
     #if self.empty or self.invisible:
     #  return False
-    ray.tnear = PyRatBig
-    ray.tfar = PyRatBig*2
+    ray.tnear = ray.big
+    ray.tfar = ray.big
     ok = [False,False,False]
 
     for i in xrange(3):
@@ -467,8 +481,42 @@ class PyRatBox(object):
       if closest and ray.tnear >= ray.length:
         return False
       ray.length = ray.tnear
+      #import pdb;pdb.set_trace()
       return True
-    return False      
+
+    return False  
+
+  def intersect(self,r,closest=True):
+    '''
+    Intersection test for a bounding box
+    '''
+    direction = r.direction.copy()
+    direction[direction==0] = PyRatTol
+    tmin = (self.min - r.origin) / direction
+    tmax = (self.max - r.origin) / direction
+    tt = tmin.copy()
+    tt[tmax<tmin] = tmax[tmax<tmin]
+    tmax[tmin>tmax] = tmin[tmin>tmax]
+    tmin = tt
+
+    if (tmin[0] > tmax[1]) or (tmin[1] > tmax[0]):
+      return False
+    if tmin[1] > tmin[0]:
+      tmin[0] = tmin[1]
+    if tmax[1] < tmax[0]:
+      tmax[0] = tmax[1]
+    if (tmin[0] > tmax[2]) or (tmin[2] > tmax[0]):
+      return False
+
+    if tmin[2] > tmin[0]:
+      tmin[0] = tmin[2]
+    if tmax[2] < tmax[0]:
+      tmax[0] = tmax[2]
+    r.tnear = tmin[0]
+    r.tfar = tmax[0]
+    if closest and r.tnear >= r.length:
+      return False
+    return tmin[0] < r.length
 
   def intersectsMany(self,rays,closest=True):
     '''
@@ -477,6 +525,15 @@ class PyRatBox(object):
     result = []
     for ray in rays:
       result.append(self.intersects(ray,closest=closest))
+    return result
+
+  def rayTreeMany(self,rays,closest=True):
+    '''
+    Call intersects for multiple rays
+    '''
+    result = []
+    for ray in rays:
+      result.append(self.rayTree(ray,closest=closest))
     return result
 
   def isDefined(self):
@@ -490,11 +547,13 @@ class PyRatBox(object):
 
   def intersects(self,ray,closest=True):
     '''
+    'solid' object intersection tests
+
     Call intersect but return ray as well
     '''
     from PyRatClone import PyRatClone
     # cheap method if only one entry
-    invisible = self.invisible # or type(self) == PyRatClone
+    invisible = self.invisible# or type(self) == PyRatClone
     if invisible and len(self.contents) == 1:
       return self.contents[0].intersects(ray,closest=closest)
 
@@ -511,7 +570,7 @@ class PyRatBox(object):
       thisRay.length = thisRay.tnear
     # if not, then don't bother with contents
     # if we do hit, then have a look at the contents
-    ray = thisRay
+    ray.ccopy(thisRay)
     hit = False
     if len(self.contents) == 0:
       return thisHit or hit,ray.copy()
@@ -538,7 +597,6 @@ class PyRatBox(object):
             projLength = thatRay.tnear * np.abs(thatRay.direction[axis%3])
             doit = projLength >= max
             hit = thatHit
-            ray.ccopy(thatRay)
             ray.length = thatRay.tnear
     else:
       for i in self.contents:
@@ -564,18 +622,19 @@ class PyRatBox(object):
               than interpolated) surface normal
 
     '''
+    #import pdb;pdb.set_trace()
     hitPoint = (self.hit(ray,ok=True) - \
                  self.min)/self.extent
     ihitPoint = (hitPoint+0.5).astype(int)
     delta = hitPoint - ihitPoint
-    axis = np.where(delta == np.min(np.abs(delta)))[0]
+    axis = np.where(np.in1d(np.abs(delta),np.min(np.abs(delta))))[0]
     upDown = 2*ihitPoint[axis]-1
     direction = np.zeros(3)
     direction[axis] = upDown
     ray.localNormal = direction
     return direction
 
-  def hit(self,ray,ok=False):
+  def hit(self,ray,ok=False,diff=None):
     '''
     Calculate intersection point of ray with object
     
@@ -585,8 +644,9 @@ class PyRatBox(object):
       ok   : set to True is ray.tnear is already calculated
              otherwise self.intersect(ray) is called
     '''
+    diff = diff or -PyRatRayTol
     ok = ok or self.vintersect(ray)
-    if ok: return ray.origin + (ray.length-PyRatRayTol) * ray.direction
+    if ok: return ray.origin + (ray.length+diff) * ray.direction
     return None
 
   def spherical(self,angles=None):
@@ -606,6 +666,64 @@ class PyRatBox(object):
     a box to a bounding box
     '''
     pass
+
+  def rayTree(self,ray,closest=True):
+    '''
+    Return a ray tree
+    '''
+    from PyRatRay import PyRatRay
+    sun = ray.sun
+    hit = False
+    # first try any infinite planes
+    for i in self.planes:
+      thatHit,thatRay = i.intersects(ray.copy(),closest=True)
+      if thatHit and thatRay.tnear < ray.length:
+        hit = thatHit
+        ray.ccopy(thatRay)
+        ray.length = thatRay.tnear
+    # then try this object and its contents
+    # noting that the infinite planes may have given
+    # a ray.length we need to beat
+    thisHit,thisRay = self.intersects(ray.copy(),closest=closest)
+    if thisHit:
+      ray.ccopy(thisRay)
+      ray.length = thisRay.tnear
+      hit = thisHit
+      
+    try:
+      obj = ray.object
+    except:
+      obj = None 
+    if hit and obj != None:
+      try:
+        n = ray.localNormal
+      except:
+        try:
+          n = ray.localNormal = ray.object.surfaceNormal(ray)
+        except:
+          n = np.array([0,0,1.])
+      #return True,ray,n
+      # now see if we hit the sun
+      ray.hitPoint = ray.length * ray.direction + ray.origin
+      isTransmittance = dot(n,ray.direction) > 0
+      #import pdb;pdb.set_trace()
+      if isTransmittance:
+        # transmittance
+        sunRay = PyRatRay(ray.hitPoint+PyRatRayTol*ray.direction,sun)
+      else:
+        sunRay = PyRatRay(ray.hitPoint-PyRatRayTol*ray.direction,sun)
+      try:
+        sunRay.view = ray
+        sunHit,sunThisRay = self.intersects(sunRay.copy(),closest=closest)
+      except:
+        # not sure what to do here 
+        sunHit = True
+      if not sunHit:
+        return True,ray,n
+      else:
+        return False,ray,np.array([0,0,1.])
+    else:
+      return False,ray,np.array([0,0,1.])  
 
 def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
   '''
@@ -647,17 +765,20 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
   name = type[5:]
   obj = obj or eval('%s(base,tip,info=info)'%type)
   # ray direction
-  direction = np.array([0,0,-1])
-
+  direction = np.array([-1,-1.,-1])
+  direction /= sqrt(dot(direction,direction))
+ 
+  origin = -direction * 6.0 
+  focalPoint = origin*1.5
   # sun direction
-  sun = np.array([1,1,1.])
+  sun = np.array([10,-10,20.])
   sun /= sqrt(dot(sun,sun))
 
   # image size
-  size = (100,100)
+  size = (200,200)
 
   # ray origins
-  origin = np.array([0,0,4]).astype(float)
+  #origin = np.array([0,0,4]).astype(float)
   o = origin.copy()
   ray = PyRatRay(o,direction)
 
@@ -689,11 +810,14 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
     sims = []
     l = float(size[0])
     index = []
+    ray.sun = sun
     for ix in xrange(size[0]):
       o[0] = origin[0] + dimensions[0] * 2.*(ix-size[0]*0.5)/size[0]
       for iy in xrange(size[1]):
         o[1] = origin[1] + dimensions[1] * 2.*(iy-size[1]*0.5)/size[1]
         ray.length = PyRatBig
+        d = (o - focalPoint)
+        ray.direction = d/sqrt(dot(d,d))
         index.append((ix,iy))
         sims.append(ray.copy())
 
@@ -702,10 +826,10 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
     results = []
     for i in xrange(0,len(sims),nAtTime):
       try:
-        f = job_server.submit(obj.intersectsMany,(sims[i:i+nAtTime],))  
+        f = job_server.submit(obj.rayTreeMany,(sims[i:i+nAtTime],))  
         j = index[i:i+nAtTime]
       except:
-        f = job_server.submit(obj.intersectsMany,(sims[i:],))
+        f = job_server.submit(obj.rayTreeMany,(sims[i:],))
         j = index[i:]
       results.append([j[:,0],j[:,1],f])
 
@@ -719,6 +843,7 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
       r = results[c]
       f = r[2]
       thisResult = f()
+      # this returns True,ray,n
       try:
        ww = np.where(np.array(thisResult)[:,0])[0]
        iix = r[0][ww]
@@ -728,17 +853,17 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
             ix = iix[j]
             iy = iiy[j]
             ray = val[1]
-            try:
-              n = ray.localNormal
-            except:
-              n = np.array([0,0,1.])
-            result0[size[0]-1-ix,size[1]-1-iy] = (dot(n,sun))
+            n = val[2]
+            lambert = dot(n,sun)
+            if lambert < 0: lambert = 0
+            result0[size[0]-1-ix,size[1]-1-iy] = lambert
             result1[size[0]-1-ix,size[1]-1-iy] = ray.tnear
             result2[size[0]-1-ix,size[1]-1-iy] = ray.tfar
       except:
         pass
   else:
     l = size[0]
+    ray.sun = sun
     for ix in xrange(size[0]):
       o[0] = origin[0] + dimensions[0] * 2.*(ix-size[0]*0.5)/size[0]
       if 'verbose' in info and int(100.*(ix+1)/l) % 5 == 0:
@@ -747,20 +872,31 @@ def test(base,tip,obj=None,type=None,file=None,info={},nAtTime=200):
         o[1] = origin[1] + dimensions[1] * 2.*(iy-size[1]*0.5)/size[1]
         ray.length = ray.tnear = ray.tfar =PyRatBig
         ray.origin = o
-        hit,thisRay = obj.intersects(ray)
-        if hit:
-          ray.ccopy(thisRay)
+        d = (o - focalPoint) 
+        ray.direction = d/sqrt(dot(d,d))
+        try:
+          hit,thisRay,n = obj.rayTree(ray.copy())
+        except:
+          hit = False
           try:
-            n = ray.localNormal
+            print obj,ray
+            print ray.copy()
           except:
-            n = np.array([0,0,1.])
-          result0[size[0]-1-ix,size[1]-1-iy] = (dot(n,sun))
-          result1[size[0]-1-ix,size[1]-1-iy] = ray.tnear
-          result2[size[0]-1-ix,size[1]-1-iy] = ray.tfar
+            hit = False
+        if hit:
+          lambert = dot(n,sun)
+          if lambert < 0: lambert = 0
+          result0[size[0]-1-ix,size[1]-1-iy] = lambert
+          result1[size[0]-1-ix,size[1]-1-iy] = thisRay.tnear
+          result2[size[0]-1-ix,size[1]-1-iy] = thisRay.tfar
+        else:
+          missed = True
   if 'verbose' in info:
     sys.stderr.write('\nWriting results\n')
   plt.clf()
   plt.imshow(result0,interpolation='nearest')
+  if 'verbose' in info: sys.stderr.write('Mean: %f\n'%np.mean(result0))
+
   plt.colorbar()
   if not os.path.exists('tests'):
     os.makedirs('tests')
@@ -783,11 +919,11 @@ def main():
   tests/PyRatBox-near.png and tests/PyRatBox-far.png
   with the near and far distances 
   '''
-  min = [-0.5,-0.5,2]
-  extent = [1,2,1]
-  info = {'verbose':True,'lad':3.0}
+  extent = np.array([1,1,1]).astype(float) * 3
+  min = -extent/2.
+  
+  info = {'verbose':True}# ,'lad':3.0}
   test(min,extent,info=info)
-
 
 if __name__ == "__main__":
     main()

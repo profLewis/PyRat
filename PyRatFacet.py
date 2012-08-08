@@ -147,7 +147,9 @@ class PyRatFacet(PyRatPlane):
       return False
     ray.uv = np.array([uvX,uvY])
     ray.length = ray.tnear
-
+    if ray.tnear < PyRatRayTol or (closest and ray.tnear >= ray.length):
+      ray.tnear = ray.tfar = ray.length = PyRatBig
+      return False
     return True
 
 def main():

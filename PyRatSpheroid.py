@@ -48,7 +48,7 @@ class PyRatSpheroid(PyRatEllipsoid):
     '''
     hitPoint = self.hit(ray,ok=True)
     v1 = (hitPoint - self.centre)/self.radius
-    ray.localNormal = v1
+    ray.localNormal = v1/sqrt(dot(v1,v1))
     return v1
 
 def main():

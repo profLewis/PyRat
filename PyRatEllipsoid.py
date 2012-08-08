@@ -38,7 +38,11 @@ class PyRatEllipsoid(PyRatPlane):
       self.empty = True
       return self
 
-    self.centre = base + np.array([0,0,self.radius[2]])
+    try:
+      self.centre = base + np.array([0,0,self.radius[2]])
+    except:
+      import pdb;pdb.set_trace()
+      print self.radius
 
     # ellipsoid surface area 
     # approximation http://en.wikipedia.org/wiki/Ellipsoid 
@@ -118,6 +122,10 @@ class PyRatEllipsoid(PyRatPlane):
       return False
     ray.rayLengthThroughObject = np.abs(np.max([0,p1])-np.max([0,p2]))
     ray.tfar = ray.tnear + ray.rayLengthThroughObject
+    if ray.tnear < PyRatRayTol:
+      ray.tnear = ray.tfar = ray.length = PyRatBig
+      return False
+    #import pdb;pdb.set_trace()
     return True
 
 def main():

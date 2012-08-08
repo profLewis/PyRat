@@ -69,7 +69,6 @@ class PyRatObjParser(object):
     Load a GL representation
     '''
     if bbox == self.root:
-      import pdb;pdb.set_trace()
       facet_list = glGenLists(2)
       glNewList(facet_list, GL_COMPILE)
       glBegin(GL_TRIANGLES)
@@ -114,7 +113,7 @@ class PyRatObjParser(object):
     combine other with self
     '''
 
-  def reconcile(self,bbox,level,defined=False):
+  def reconcile(self,bbox,level,defined=False,ignoreVisit=False):
     '''
     Reconcile world object:
      - update bboxes (min, max)
@@ -124,7 +123,7 @@ class PyRatObjParser(object):
     '''
     from PyRatClone import PyRatClone
     try:
-      if bbox.visited:
+      if not ignoreVisit and bbox.visited:
         return bbox
     except:
       bbox.visited = True
@@ -132,17 +131,16 @@ class PyRatObjParser(object):
       # if it has a #define, remove from list
       return None
     if type(self) == PyRatClone:
-      import pdb;pdb.set_trace()
       print 'clone'
     # if there is only one object and its a box and its empty
     # then delete it
-    #if len(bbox.contents) == 1:
-    #  if type(bbox.contents[0]) == PyRatBox:
-    #    if bbox.contents[0].empty:
-    #      return self.reconcile(bbox.contents[0])
+    if len(bbox.contents) == 1:
+      if type(self) == PyRatBox and type(bbox.contents[0]) == PyRatBox:
+        if bbox.contents[0].invisible and self.invisible:
+          return self.reconcile(bbox.contents[0],level,ignoreVisit=ignoreVisit)
     # scan over the world object
     for c,i in enumerate(bbox.contents):
-      bbox.contents[c] = self.reconcile(i,level+1)
+      bbox.contents[c] = self.reconcile(i,level+1,ignoreVisit=ignoreVisit)
     #  if type(i) == PyRatBox and bbox.contents[c].invisible:
     #    # remove it
     #    bbox.contents.pop(c)
@@ -191,6 +189,7 @@ class PyRatObjParser(object):
     self.dict = {\
       '#':self.comment,\
       '#define':self.define,\
+      'box':self.box,\
       '!{':self.openBox,\
       '!}':self.closeBox,\
       'usemtl':self.usemtl,\
@@ -430,8 +429,8 @@ class PyRatObjParser(object):
       if this < 0:
         this += self.nPoints
       self.top.contents.append(\
-           PyRatEllipsoid(self.point[this[1]],\
-             np.array([this[2],this[3],this[4]]).astype(float),\
+           PyRatEllipsoid(self.point[this],\
+             np.array([cmd[2],cmd[3],cmd[4]]).astype(float),\
              material=self.top.material))
       self.verbose == 2 and sys.stderr.write('e')
     except:
@@ -553,7 +552,6 @@ class PyRatObjParser(object):
     '''
     Open a bounding box
 
-    Start a new container box and push on stack
     '''
     from PyRatBox import PyRatBox
     box = PyRatBox(np.zeros(3),None)
@@ -562,8 +560,24 @@ class PyRatObjParser(object):
     self.top.contents.append(box)
     self.stack.append(self.top)
     self.top = self.top.contents[-1]
-    
+
     self.verbose == 2 and sys.stderr.write('[%d}'%len(self.stack))
+
+  def box(self,cmd):
+    '''
+    Open a solid box
+
+    Start a new container box and push on stack
+   
+    box minx miny minz maxx maxy maxz 
+    '''
+    from PyRatBox import PyRatBox
+    box = PyRatBox(np.array(cmd[1:1+3]).astype(float),np.array(cmd[4:4+3]).astype(float))
+    box.invisible = False
+    box.empty = False
+    self.top.contents.append(box)
+    
+    self.verbose == 2 and sys.stderr.write('B'%len(self.stack))
 
   def closeBox(self,cmd):
     '''
@@ -692,30 +706,15 @@ def main():
   filename = 'spheresTest/HET01_DIS_UNI_NIR_20/HET01_DIS_UNI_NIR_20.obj'
   filename = 'tests/clone3.obj'
   world = PyRatObjParser(filename,verbose=True)
+  if world.root.size == 0:
+    world.error('Zero size in world root')
+    return False
+  world.root.planes = world.infinitePlane
 
-  clone = PyRatClone(np.zeros(3),None)
-  clone.thisGroup = None
-  clone.offset = np.array([-0.5,0.5,0.])
-  clone.offset = np.array([1.5,-1,0.])
-  clone.matrix = np.eye(3)
-  
-  c = np.cos(-15*np.pi/180.)
-  s = np.sin(-15*np.pi/180.)
-  clone.matrix[1,1] = clone.matrix[0,0] = c
-  clone.matrix[0,1] = -s
-  clone.matrix[1,0] = s
-  clone.matrix *= 0.5
-  clone.empty = False
-  clone.invisible = True
-  clone.contents = [world.root]
-  world.reconcile(clone,0)
-
-  clone.updateBbox() 
   info = {'verbose':True}
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
-  test(np.zeros(3),np.zeros(3),obj=clone,info=info,type=name,nAtTime=100*100/20)
-  
-  print 'ok'
+  test(np.zeros(3),np.zeros(3),obj=world.root,info=info,type=name,nAtTime=100*100/20)
+  return True  
 
 if __name__ == "__main__":
     main()

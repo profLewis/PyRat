@@ -81,7 +81,8 @@ class PyRatDisk(PyRatPlane):
     if b == 0:
       return False
     ray.tnear = a/b
-    if ray.tnear < 0 or (closest and ray.tnear >= ray.length):
+    if ray.tnear < PyRatRayTol or (closest and ray.tnear >= ray.length):
+      ray.tnear = ray.tfar = ray.length = PyRatBig
       return False
     # radial vector
     R = ray.direction*ray.tnear - A

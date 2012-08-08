@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
+from PyRatBox import PyRatBig
 
 class PyRatRay(object):
   def __init__(self,origin,direction):
@@ -12,6 +13,7 @@ class PyRatRay(object):
     self.object = None
     self.rays = None
     self.sun = np.array([0,0,1.])
+    self.big = PyRatBig
 
   def ccopy(self,new):
     tnear = new.tnear
@@ -69,6 +71,24 @@ class PyRatRay(object):
     self.error('%s length   \t%s'%(buff,str(self.length)))
     self.error('%s hit point\t%s'%(buff,str(self.hitPoint)))
     self.error('%s object   \t%s'%(buff,str(self.object)))
+    try:
+      self.error('%s normal   \t%s'%(buff,str(self.localNormal)))
+    except:
+      try:
+        self.localNormal = self.object.surfaceNormal(self)
+        self.error('%s normal   \t%s'%(buff,str(self.localNormal)))
+      except:
+        pass
+    try:
+      self.error('%s %s'%(buff,'sun:'))
+      self.sun.report(level=level+1)
+    except:
+      pass
+    try:
+      self.error('%s %s'%(buff,'view:'))
+      self.view.report(level=level+1)
+    except:
+      pass
     try:
       for ray in self.rays:
         ray.report(level=level+1)

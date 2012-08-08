@@ -97,6 +97,9 @@ class PyRatPlane(PyRatBox):
     if D <= 0 or (closest and D >= ray.length):
       return False
     ray.tnear = D
+    if ray.tnear < PyRatRayTol or (closest and ray.tnear >= ray.length):
+      ray.tnear = ray.tfar = ray.length = PyRatBig
+      return False
     return True 
 
 def main():
