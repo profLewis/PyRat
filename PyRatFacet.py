@@ -49,21 +49,13 @@ class PyRatFacet(PyRatPlane):
     self.orientation = np.where(nn == np.max(nn))[0][0] - 1
     r = np.arange(3)
     # fbase is of dimension (2,3)
-    tmp = 0.0
-    count = 0
-    while tmp == 0:
-      self.orientation = (self.orientation+1)%3
-      count+=1
-      if count > 4:
-        self.error('funny-sized facet')
-        self.empty = True
-        return self
-      self.fbase = vertices[0][r!=self.orientation]
-      self.Du = du[r!=self.orientation]
-      self.Dv = dv[r!=self.orientation]
-      tmp = self.Du[0]*self.Dv[1] - self.Dv[0]*self.Du[1]
-    self.store = np.array([self.Dv[1],-self.Dv[0],-self.Du[1],self.Du[0]])/tmp
-    self.scale = 1./tmp
+    #self.fbase = vertices[0][r!=self.orientation]
+    self.Du = du
+    self.Dv = dv
+    self.Ulength = dot(self.Du,self.Du)
+    self.Vlength = dot(self.Dv,self.Dv)
+    #self.store = np.array([self.Dv[1],-self.Dv[0],-self.Du[1],self.Du[0]])/tmp
+    #self.scale = 1./tmp
       
     PyRatPlane.__init__(self,vertices[0],n,\
                              contents=contents,material=material,info=info)
@@ -127,29 +119,20 @@ class PyRatFacet(PyRatPlane):
                 ray length would be greater than ray.length
 
     '''
-    #import pdb;pdb.set_trace()
     if not self.rayToPlane(ray):
       return False
     if closest and ray.tnear >= ray.length:
       return False
-    length = ray.length
-    ray.length = ray.tnear 
-    ray.hitPoint = self.hit(ray,ok=True)
-    ray.length = length
-    r = np.arange(3)
-    v = ray.hitPoint[r!=self.orientation] - self.fbase
-    # local coords
-    uvY = (self.store[0]*v[0] + self.store[1]*v[1])*self.scale
-    if uvY <0 or uvY > 1:
+    dd = ray.tnear*ray.direction + ray.origin - self.base
+    U = dot(dd,self.Du)/self.Ulength
+    if U < 0 or U > 1:
       return False
-    uvX = (self.store[2]*v[0] + self.store[3]*v[1])*self.scale
-    if uvX<0 or uvX>1 or uvX+uvY>1+PyRatUnityTol :
+    V = dot(dd,self.Dv)/self.Vlength
+    if U+V > 1 or V < 0 or V > 1:
       return False
-    ray.uv = np.array([uvX,uvY])
+    #import pdb;pdb.set_trace()
     ray.length = ray.tnear
-    if ray.tnear < PyRatRayTol or (closest and ray.tnear >= ray.length):
-      ray.tnear = ray.tfar = ray.length = PyRatBig
-      return False
+    ray.uv = np.array([U,V]) 
     return True
 
 def main():
@@ -169,7 +152,7 @@ def main():
 
   # set up a test object: a disk
   from PyRatBox import test
-  vertices = np.array([[0,0,0.],[0,1,0],[1,0,0]])
+  vertices = np.array([[0,0,0.],[0,2,0],[2,0,-1]])
   info = {'verbose':True}
 
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
