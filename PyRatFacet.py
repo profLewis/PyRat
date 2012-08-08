@@ -169,7 +169,7 @@ def main():
 
   # set up a test object: a disk
   from PyRatBox import test
-  vertices = np.array([[0,0,3.],[0,1,2],[1,0,4]])
+  vertices = np.array([[0,0,0.],[0,1,0],[1,0,0]])
   info = {'verbose':True}
 
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])

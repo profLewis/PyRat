@@ -70,7 +70,7 @@ def main():
 
   from PyRatBox import test
 
-  base = np.array([0,0,2.])
+  base = np.array([0,0,0.])
   radius = 1.0
   info = {'verbose':True}#,'lad':3.0}
 

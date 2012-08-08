@@ -176,7 +176,7 @@ def main():
 
   # set up a test object: a disk
   from PyRatBox import test
-  base = np.array([0,0,3.])
+  base = np.array([0,0,1.])
   normal = np.array([1,1,1.])
   info = {'verbose':True,'radius':1.0}
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
