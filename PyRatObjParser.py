@@ -1,18 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python 
 import numpy as np
 from PyRatBox import *
 
 try:
-  import OpenGL
-  OpenGL.ERROR_ON_COPY = True
-  from OpenGL.GL import *
-  from OpenGL.GLUT import *
-  from OpenGL.arrays import vbo
-  import sys, time
-  from math import sin,cos,sqrt,pi
-  from OpenGL.constants import GLfloat
-  vec4 = GLfloat_4
-  from OpenGLContext.arrays import *
+  from mayavi import mlab
+  from tvtk.api import tvtk
+  #from mayavi.scripts import mayavi2
   hasGL = True
 except:
   hasGL = False
@@ -62,37 +55,41 @@ class PyRatObjParser(object):
     self.verbose=verbose
     self.reportingFrequency = 10
     if self.GL:
-      self.GLfacetList = self.loadGL(self.root,np.eye(3),np.matrix(np.zeros(3)))
+      if self.verbose:
+        sys.stderr.write('\n ... sorting GL representation\n')
+      self.GLobjects = []
+      self.loadGL(self.root,np.eye(3),np.matrix(np.zeros(3)))
 
-  def loadGL(self,bbox,matrix,offset):
+  def loadGL(self,bbox,Mmatrix,Ooffset):
     '''
     Load a GL representation
     '''
+    from PyRatClone import PyRatClone
+    from PyRatSpheroid import PyRatSpheroid
+    from PyRatCylinder import PyRatCylinder
+    matrix = Mmatrix.copy()
+    offset = Ooffset.copy()
     if bbox == self.root:
-      facet_list = glGenLists(2)
-      glNewList(facet_list, GL_COMPILE)
-      glBegin(GL_TRIANGLES)
-    # load triangles
-    try:
-      facet_list = self.loadGL(self.GLRepresentation,matrix,offset)
-    except:
-      for i,c in enumerate(self.contents):
-        try:
-          self.loadGL(c,matrix,offset)
-        except:
-          pass
-
+      pass
+    if type(bbox) == PyRatClone:
       try:
-        glVertex3f(self.fbase[0],self.fbase[1],self.fbase[2])
-        glVertex3f(self.fbase[0]+self.du[0],self.fbase[1]+self.du[1],self.fbase[2]+self.du[2])
-        glVertex3f(self.fbase[0]+self.dv[0],self.fbase[1]+self.dv[1],self.fbase[2]+self.dv[2])
+        matrix = matrix * bbox.matrix
+        offset = offset * bbox.matrix
+      except:
+        pass
+      try:
+        offset += bbox.offset
       except:
         pass
 
-    if bbox == self.root:
-      glEnd()
-      glEndList()
-      return facet_list
+    try:
+      if type(bbox) == PyRatSpheroid or type(bbox) == PyRatCylinder:
+        self.GLobjects.append(bbox.draw(matrix=matrix,offset=offset,scale=1.0))
+    except:
+      pass
+    for i in bbox.contents:
+      self.loadGL(i,matrix,offset)
+
     return None
 
   def dump(self,filename):
@@ -466,7 +463,7 @@ class PyRatObjParser(object):
     self.verbose == 2 and sys.stderr.write('C')
 
 
-  def sph(self,cmd):
+  def sph(self,cmd,N=11):
     '''
     Spheroid
 
@@ -481,6 +478,11 @@ class PyRatObjParser(object):
            PyRatSpheroid(self.point[int(this)],float(cmd[2]),\
                          material=self.top.material))
       self.verbose == 2 and sys.stderr.write('s')
+
+      #if self.GL and hasGL:
+      #  this = self.top.contents[-1]
+      #  this.GLRepresentation = this.tesselate(N=N)
+
     except:
       self.error('could not interpret "sph" line %d of %s: %s'%\
                 (self.lineNumber,self.filename,' '.join(cmd)))
@@ -670,9 +672,9 @@ class PyRatObjParser(object):
       self.error('could not interpret "disk" line %d of %s: %s'%\
                 (self.lineNumber,self.filename,' '.join(cmd)))
     
-    if self.GL and isOK:
-      this = self.top.contents[-1]
-      this.GLRepresentation = this.tesselate(N=N)
+    #if self.GL and isOK:
+    #  this = self.top.contents[-1]
+    #  this.GLRepresentation = this.tesselate(N=N)
 
   def f(self,cmd):
     '''
@@ -693,6 +695,19 @@ class PyRatObjParser(object):
       self.error('could not interpret "f" line %d of %s: %s'%\
                 (self.lineNumber,self.filename,' '.join(cmd)))
 
+  def write(self,filename,type='compatible'):
+    '''
+    Write out a wavefront format representation
+    '''
+    M = np.eye(3)
+    C = np.matrix(np.zeros(3))
+    file = open(filename,'w')
+    try:
+      self.root.write(file,M=M.copy(),C=C.copy(),type=type)      
+    except:
+      pass
+
+
 def main():
   '''
   Test to demonstrate reading an obj file
@@ -702,9 +717,19 @@ def main():
   from PyRatObjParser import PyRatObjParser
   from PyRatClone import PyRatClone
   from PyRatBox import test
-
   filename = 'tests/clone3.obj'
-  world = PyRatObjParser(filename,verbose=True)
+  world = PyRatObjParser(filename,verbose=True,GL=True)
+  import pdb;pdb.set_trace()
+  if world.GL:
+    #fig = mlab.figure()
+    for i,mesh in enumerate(world.meshes):
+      #print i,mesh[:,-1]
+      m = mlab.mesh(mesh[0],mesh[1],mesh[2])
+    try:
+      mlab.triangular_mesh(world.GLCoordinates[0],world.GLCoordinates[1],world.GLCoordinates[2],world.GLFacets)
+    except:
+      pass
+    mlab.show()
   if world.root.size == 0:
     world.error('Zero size in world root')
     return False

@@ -51,6 +51,98 @@ class PyRatSpheroid(PyRatEllipsoid):
     ray.localNormal = v1/sqrt(dot(v1,v1))
     return v1
 
+  def draw(self,matrix=None,offset=None,scale=1.0):
+    '''
+    mayavi/tvtk drawing method
+    '''
+    try:
+      from enthought.tvtk.tools import visual
+    except:
+      return None
+    sph = visual.SphereSource(pos=tuple(modify(self.centre,matrix,offset)),\
+         radius=self.radius*scale)
+    return sph
+
+
+
+  def tesselate(self,N=8):
+    '''
+    This method forms a new (triangulated) version of the object
+    with N segments.
+
+    It returns a PyRatBox object which contains the set of N PyRatFacet
+    objects.
+
+    Options:
+      N   : number of segments
+    '''
+    phi, theta = np.mgrid[0:np.pi:complex(0,N), 0:2*np.pi:complex(0,N)]
+    x = np.sin(phi) * np.cos(theta) * self.radius[0] * 0.5 + self.centre[0]
+    y = np.sin(phi) * np.sin(theta) * self.radius[1] * 0.5 + self.centre[0]
+    z = np.cos(phi) * self.radius[2] * 0.5 + self.centre[0]
+    return np.array([x,y,z])
+
+  def tesselate1(self,N=8):
+    '''
+    This method forms a new (triangulated) version of the object
+    with N segments.
+
+    It returns a PyRatBox object which contains the set of N PyRatFacet
+    objects.
+
+    Options:
+      N   : number of segments
+
+    Algorithm from:
+      http://paulbourke.net/miscellaneous/sphere_cylinder/
+
+    '''
+    from PyRatBox import PyRatBox
+    from PyRatFacet import PyRatFacet
+    centre = self.centre
+    radius = self.radius
+
+    p1 = np.array([1.0,1.0,1.0])
+    p2 = np.array([-1.0,-1.0,1.0])
+    p3 = np.array([1.0,-1.0,-1.0])
+    p4 = np.array([-1.0,1.0,-1.0])
+    p1 = normalise(p1)
+    p2 = normalise(p2)
+    p3 = normalise(p3)
+    p4 = normalise(p4)
+
+    facets = [[p1,p2,p3],[p2,p1,p4],[p2,p4,p3],[p1,p3,p4]]
+    n = 4
+    for i in xrange(N):
+      nstart = n
+      for j in xrange(nstart):
+        # Create initially copies for the new facets
+        facets.append([i.copy() for i in facets[j]])
+        facets.append([i.copy() for i in facets[j]])
+        facets.append([i.copy() for i in facets[j]])
+        # Calculate the midpoints
+        p1 = (facets[j][0]+facets[j][1])*0.5
+        p2 = (facets[j][1]+facets[j][2])*0.5
+        p3 = (facets[j][2]+facets[j][0])*0.5
+        # Replace the current facet
+        facets[j][1] = p1
+        facets[j][2] = p3
+        # Create the changed vertices in the new facets
+        facets[n][0]   = p1
+        facets[n][2]   = p2
+        facets[n+1][0] = p3
+        facets[n+1][1] = p2
+        facets[n+2] = [p1,p2,p3]
+        n += 3
+
+    output = []
+    for j in xrange(n):
+      facets[j] = [normalise(facets[j][0])*radius+centre,\
+                   normalise(facets[j][1])*radius+centre,\
+                   normalise(facets[j][2])*radius+centre] 
+      output.append(PyRatFacet(facets[j],None)) 
+    return output
+
 def main():
   '''
   A simple test of the Spheroid algorithm

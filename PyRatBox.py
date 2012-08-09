@@ -36,6 +36,19 @@ def abs(a):
 def dot(a,b):
   return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]
 
+def normalise(a):
+  return a/sqrt(dot(a,a))
+
+def modify(value,matrix,offset):
+  if matrix != None:
+    v = np.array(np.matrix(value) * matrix)[0]
+  else:
+    v = value.copy()
+
+  if offset != None:
+    v += np.array(offset).flatten()
+  return v
+
 class PyRatBox(object):
   '''
   PyRatBox: A PyRat object 
@@ -122,16 +135,18 @@ class PyRatBox(object):
     if not self.empty:
       self.size = np.prod(self.extent)    
 
-  def report(self,level=0):
+  def report(self,level=0,maxLevel=None,matrix=None,offset=None):
     '''
     Report on object contents
     '''
+    if maxLevel != None and level >= maxLevel + 1:
+      return
     buff = '_'*level
     self.error('%05d %s{'%(level,buff))
     self.error('%s self     \t%s'%(buff,str(self)))
     self.error('%s type     \t%s'%(buff,str(type(self))))
     try:
-      self.error('%s offset   \t%s'%(buff,str(self.offset)))
+      self.error('%s offset   \t%s'%(buff,str(modify(self.offset,matrix,offset))))
     except:
       pass
     try:
@@ -139,11 +154,11 @@ class PyRatBox(object):
     except:
       pass
     try:
-      self.error('%s tip      \t%s'%(buff,str(self.tip)))
+      self.error('%s tip      \t%s'%(buff,str(modify(self.tip,matrix,offset))))
     except:
       pass
     try:
-      self.error('%s centre    \t%s'%(buff,str(self.centre)))
+      self.error('%s centre    \t%s'%(buff,str(modify(self.centre,matrix,offset))))
     except:
       pass
     try:
@@ -151,22 +166,30 @@ class PyRatBox(object):
     except:
       pass
     try:
-      self.error('%s normal    \t%s'%(buff,str(self.normal)))
+      self.error('%s normal    \t%s'%(buff,str(normalise(modify(self.normal,matrix,None)))))
     except:
       pass
 
     self.error('%s min      \t%s'%(buff,str(self.min)))
     self.error('%s max      \t%s'%(buff,str(self.max)))
-    self.error('%s base     \t%s'%(buff,str(self.base)))
-    self.error('%s extent   \t%s'%(buff,str(self.extent)))
+    self.error('%s base     \t%s'%(buff,str(modify(self.base,matrix,offset))))
+    self.error('%s extent   \t%s'%(buff,str(modify(self.extent,matrix,None))))
     self.error('%s invisible\t%s'%(buff,str(self.invisible)))
     self.error('%s empty    \t%s'%(buff,str(self.empty)))
     self.error('%s material \t%s'%(buff,str(self.material)))
     self.error('%s size     \t%s'%(buff,str(self.size)))
     self.error('%s info     \t%s'%(buff,str(self.info)))
     self.error('%s contents:'%(buff))
+    try:
+      matrix = self.matrix * matrix 
+    except:
+      pass
+    try:
+      offset += self.matrix * offset
+    except:
+      pass
     for c in self.contents:
-      c.report(level=level+1)
+      c.report(level=level+1,maxLevel=maxLevel,matrix=matrix,offset=offset)
     self.error('%05d %s}'%(level,buff))
 
   def updateContents(self):

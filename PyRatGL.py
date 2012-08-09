@@ -1,5 +1,13 @@
 #! /usr/bin/env python
 
+'''
+Uses OpenGL
+
+see: http://pyopengl.sourceforge.net/context/tutorials/shader_intro.xhtml
+
+for required packages
+'''
+
 from OpenGLContext import testingcontext
 BaseContext = testingcontext.getInteractive()
 

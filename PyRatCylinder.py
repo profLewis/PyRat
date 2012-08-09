@@ -223,6 +223,37 @@ class PyRatCylinder(PyRatPlane):
     ray.tfar = ok
     return ok.any()
 
+  def draw(self,matrix=None,offset=None,scale=1.0):
+    '''
+    mayavi/tvtk drawing method
+    '''
+    try:
+      from enthought.tvtk.tools import visual
+    except:
+      return None
+
+    cyl = visual.Cylinder(pos=tuple(modify(self.base,matrix,offset)),\
+         axis=tuple(modify(self.normal,matrix,None)),\
+         radius=self.radius*scale,length=self.length*scale)
+    return cyl
+
+  def tesselate(self,N=8):
+    '''
+    This method forms a new (triangulated) version of the object
+    with N segments.
+
+    It returns a PyRatBox object which contains the set of N PyRatFacet
+    objects.
+
+    Options:
+      N   : number of segments
+    '''
+    phi, theta = np.mgrid[0:np.pi:complex(0,N), 0:2*np.pi:complex(0,N)]
+    x = np.sin(phi) * np.cos(theta) * self.radius[0] * 0.5 + self.centre[0]
+    y = np.sin(phi) * np.sin(theta) * self.radius[1] * 0.5 + self.centre[0]
+    z = np.cos(phi) * self.radius[2] * 0.5 + self.centre[0]
+    return np.array([x,y,z])
+
 def main():
   '''
   A simple test of the cylinder algorithm

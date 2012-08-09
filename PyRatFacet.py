@@ -40,7 +40,7 @@ class PyRatFacet(PyRatPlane):
     if mod_normal == 0:
       self.error('zero-sized facet') 
       self.empty = True
-      return self
+      return None
     # normalise
     n /= sqrt(mod_normal)
 
@@ -63,7 +63,7 @@ class PyRatFacet(PyRatPlane):
     self.min = np.min(vertices,axis=0)
     self.max = np.max(vertices,axis=0)
     self.extent = self.max - self.min
-    self.base = self.min
+    self.base = self.vertices[0]
 
   def surfaceNormal(self,ray,true=True):
     '''
@@ -146,15 +146,16 @@ def main():
   '''
   import sys
   import os
+  import numpy as np
 
   from PyRatRay import PyRatRay
   import pylab as plt
+  from PyRatFacet import PyRatFacet
 
   # set up a test object: a disk
   from PyRatBox import test
   vertices = np.array([[0,0,0.],[0,2,0],[2,0,-1]])
   info = {'verbose':True}
-
   name = str(globals()['__file__'].split('/')[-1].split('.')[0])
   test(vertices,None,info=info,type=name,name=name[5:])
 
