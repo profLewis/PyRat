@@ -135,6 +135,23 @@ class PyRatBox(object):
     if not self.empty:
       self.size = np.prod(self.extent)    
 
+  def draw(self,matrix=None,offset=None,scale=1.0,thickness=None):
+    '''
+    mayavi/tvtk drawing method
+    '''
+    try:
+      from enthought.tvtk.tools import visual
+    except:
+      return None
+    if self.invisible:
+      return None
+    min = tuple(modify(self.min+0.5*self.extent,matrix,offset))
+    size = tuple(modify(self.extent,matrix,None)) 
+   
+    box = visual.Box(pos=min,size=size)
+    return box
+
+
   def report(self,level=0,maxLevel=None,matrix=None,offset=None):
     '''
     Report on object contents

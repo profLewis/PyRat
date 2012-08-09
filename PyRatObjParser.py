@@ -55,6 +55,8 @@ class PyRatObjParser(object):
     self.verbose=verbose
     self.reportingFrequency = 10
     if self.GL:
+      self.triangleN = []
+      self.triangleData = []
       if self.verbose:
         sys.stderr.write('\n ... sorting GL representation\n')
       self.GLobjects = []
@@ -67,6 +69,7 @@ class PyRatObjParser(object):
     from PyRatClone import PyRatClone
     from PyRatSpheroid import PyRatSpheroid
     from PyRatCylinder import PyRatCylinder
+    from PyRatFacet import PyRatFacet
     matrix = Mmatrix.copy()
     offset = Ooffset.copy()
     if bbox == self.root:
@@ -83,8 +86,13 @@ class PyRatObjParser(object):
         pass
 
     try:
-      if type(bbox) == PyRatSpheroid or type(bbox) == PyRatCylinder:
+      if type(bbox) != PyRatFacet:
         self.GLobjects.append(bbox.draw(matrix=matrix,offset=offset,scale=1.0))
+      else:
+        data,triangles = bbox.draw(matrix=matrix,offset=offset,scale=1.0)
+        [self.triangleData.append(data[j]) for j in xrange(3)]
+        [self.triangleN.append(triangles[j]+len(self.triangleN)) \
+                             for j in xrange(3)]
     except:
       pass
     for i in bbox.contents:
@@ -688,7 +696,7 @@ class PyRatObjParser(object):
       this[this<0] += self.nPoints
       self.top.contents.append(\
            PyRatFacet(np.array([self.point[this[0]],self.point[this[1]],\
-                      self.point[this[2]]]),\
+                      self.point[this[2]]]),None,\
                       material=self.top.material))
       self.verbose == 2 and sys.stderr.write('f')
     except:
@@ -717,12 +725,20 @@ def main():
   from PyRatObjParser import PyRatObjParser
   from PyRatClone import PyRatClone
   from PyRatBox import test
-  filename = 'tests/clone3.obj'
+  filename = 'tests/clone2.obj'
+  filename = 'tests/new_plant.obj'
   if hasGL:
     tvtk.Property(representation='wireframe') 
   world = PyRatObjParser(filename,verbose=True,GL=True)
-  import pdb;pdb.set_trace()
   if world.GL:
+    if len(world.triangleData):
+      triangleData = np.array(world.triangleData)
+      triangleN = np.array(world.triangleN)
+      mesh = tvtk.PolyData()
+      mesh.points = triangleData
+      mesh.polys = triangleN
+      # add mesh.point_data.scalars = temperature
+      # at some point
     mlab.show()
   if world.root.size == 0:
     world.error('Zero size in world root')

@@ -59,8 +59,8 @@ class PyRatSpheroid(PyRatEllipsoid):
       from enthought.tvtk.tools import visual
     except:
       return None
-    sph = visual.SphereSource(center=tuple(modify(self.centre,matrix,offset)),\
-         radius=self.radius*scale)
+    sph = visual.Sphere(pos=tuple(modify(self.centre,matrix,offset)),\
+         radius=self.radius[0]*scale)
     return sph
 
 

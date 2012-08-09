@@ -54,6 +54,22 @@ class PyRatDisk(PyRatPlane):
     self.extent = self.max - self.min
     self.base = base
 
+  def draw(self,matrix=None,offset=None,scale=1.0,thickness=None):
+    '''
+    mayavi/tvtk drawing method
+    '''
+    try:
+      from enthought.tvtk.tools import visual
+    except:
+      return None
+    thickness = thickness or self.radius*0.001
+    disk = visual.Cylinder(pos=tuple(modify(self.base,matrix,offset)),\
+         axis=tuple(modify(self.normal,matrix,None)),\
+         length=thickness,\
+         radius=self.radius*scale)
+    return disk
+
+
   def rayToPlane(self,ray):
     '''
     Use the PyRatPlane intersect() method

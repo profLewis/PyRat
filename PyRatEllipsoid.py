@@ -64,6 +64,22 @@ class PyRatEllipsoid(PyRatPlane):
     self.max = np.max(V,axis=0)
     self.extent = self.max - self.min
 
+  def draw(self,matrix=None,offset=None,scale=1.0,thickness=None):
+    '''
+    mayavi/tvtk drawing method
+    '''
+    try:
+      from enthought.tvtk.tools import visual
+    except:
+      return None
+    ell = visual.Ellipsoid(pos=tuple(modify(self.base,matrix,offset)),\
+         axis=tuple(modify(self.normal,matrix,None)),\
+         radius=self.radius[2]*scale,length=self.radius[0]*scale,\
+         height=self.radius[1]*scale)
+    return ell
+
+
+
   def surfaceNormal(self,ray,true=True):
     '''
     Return the local surface normal

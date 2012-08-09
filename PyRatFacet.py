@@ -65,6 +65,25 @@ class PyRatFacet(PyRatPlane):
     self.extent = self.max - self.min
     self.base = self.vertices[0]
 
+
+  def draw(self,matrix=None,offset=None,scale=1.0,thickness=None):
+    '''
+    mayavi/tvtk drawing method
+    '''
+    try:
+      from enthought.tvtk.tools import visual
+    except:
+      return None
+    if self.invisible:
+      return None
+    base = tuple(modify(self.base,matrix,offset))
+    du = tuple(modify(self.Du,matrix,None))
+    dv = tuple(modify(self.Dv,matrix,None))
+    data = np.array([base,base+du,base+dv],'f')
+    triangles = np.array([0,1,2]) 
+    return data,triangles
+
+
   def surfaceNormal(self,ray,true=True):
     '''
     Return the local surface normal
