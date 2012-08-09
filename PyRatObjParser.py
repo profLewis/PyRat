@@ -718,17 +718,11 @@ def main():
   from PyRatClone import PyRatClone
   from PyRatBox import test
   filename = 'tests/clone3.obj'
+  if hasGL:
+    tvtk.Property(representation='wireframe') 
   world = PyRatObjParser(filename,verbose=True,GL=True)
   import pdb;pdb.set_trace()
   if world.GL:
-    #fig = mlab.figure()
-    for i,mesh in enumerate(world.meshes):
-      #print i,mesh[:,-1]
-      m = mlab.mesh(mesh[0],mesh[1],mesh[2])
-    try:
-      mlab.triangular_mesh(world.GLCoordinates[0],world.GLCoordinates[1],world.GLCoordinates[2],world.GLFacets)
-    except:
-      pass
     mlab.show()
   if world.root.size == 0:
     world.error('Zero size in world root')
