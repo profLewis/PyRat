@@ -231,7 +231,6 @@ class PyRatCylinder(PyRatPlane):
       from enthought.tvtk.tools import visual
     except:
       return None
-
     cyl = visual.Cylinder(pos=tuple(modify(self.base,matrix,offset)),\
          axis=tuple(modify(self.normal,matrix,None)),\
          radius=self.radius*scale,length=self.length*scale)

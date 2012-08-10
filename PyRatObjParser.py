@@ -4,8 +4,12 @@ from PyRatBox import *
 
 try:
   from mayavi import mlab
+  import mayavi
   from tvtk.api import tvtk
-  #from mayavi.scripts import mayavi2
+  from enthought.mayavi.sources.vtk_data_source import VTKDataSource
+  from enthought.mayavi.modules.surface import Surface
+  from mayavi.scripts import mayavi2
+  from PyRatGL import *
   hasGL = True
 except:
   hasGL = False
@@ -61,6 +65,21 @@ class PyRatObjParser(object):
         sys.stderr.write('\n ... sorting GL representation\n')
       self.GLobjects = []
       self.loadGL(self.root,np.eye(3),np.matrix(np.zeros(3)))
+      for pl in self.infinitePlane:
+        # how big to do an infinite plane then?
+        pa = np.array([pl.base-self.root.min.copy(),pl.base-self.root.min.copy(),\
+                       pl.base-self.root.max.copy(),pl.base-self.root.max.copy()])
+        pa[:,2] = 0.
+        pa[1,1] = pa[3,1]
+        pa[2,1] = pa[0,1]
+        NN = len(self.triangleData)
+        for i in xrange(4):
+          pa[i,2] = -1.*dot(pa[i],pl.normal)/pl.normal[2]
+          self.triangleData.append(pl.base-pa[i])
+        self.triangleN.append([NN+0,NN+1,NN+3])
+        self.triangleN.append([NN+3,NN+2,NN+0])
+      if len(self.triangleData):
+        self.GLobjects.append(Facet(coords=self.triangleData,indices=self.triangleN))
 
   def loadGL(self,bbox,Mmatrix,Ooffset):
     '''
@@ -76,8 +95,8 @@ class PyRatObjParser(object):
       pass
     if type(bbox) == PyRatClone:
       try:
-        matrix = matrix * bbox.matrix
-        offset = offset * bbox.matrix
+        matrix = matrix * bbox.matrix.T
+        #offset = offset * bbox.matrix
       except:
         pass
       try:
@@ -91,8 +110,7 @@ class PyRatObjParser(object):
       else:
         data,triangles = bbox.draw(matrix=matrix,offset=offset,scale=1.0)
         [self.triangleData.append(data[j]) for j in xrange(3)]
-        [self.triangleN.append(triangles[j]+len(self.triangleN)) \
-                             for j in xrange(3)]
+        self.triangleN.append(tuple(triangles + len(self.triangleData) - 3))
     except:
       pass
     for i in bbox.contents:
@@ -434,7 +452,7 @@ class PyRatObjParser(object):
       if this < 0:
         this += self.nPoints
       self.top.contents.append(\
-           PyRatEllipsoid(self.point[this],\
+           PyRatEllipsoid(self.point[this].copy(),\
              np.array([cmd[2],cmd[3],cmd[4]]).astype(float),\
              material=self.top.material))
       self.verbose == 2 and sys.stderr.write('e')
@@ -454,7 +472,7 @@ class PyRatObjParser(object):
       this[this<0] += self.nPoints
       info.update({'radius':float(cmd[3])})
       self.top.contents.append(\
-           PyRatCylinder(self.point[this[0]],self.point[this[1]],info=info,\
+           PyRatCylinder(self.point[this[1]].copy(),self.point[this[0]].copy(),info=info,\
                          material=self.top.material))
       self.verbose == 2 and sys.stderr.write('c')
     except:
@@ -483,7 +501,7 @@ class PyRatObjParser(object):
       if this < 0:
         this += self.nPoints
       self.top.contents.append(\
-           PyRatSpheroid(self.point[int(this)],float(cmd[2]),\
+           PyRatSpheroid(self.point[int(this)].copy(),float(cmd[2]),\
                          material=self.top.material))
       self.verbose == 2 and sys.stderr.write('s')
 
@@ -507,7 +525,7 @@ class PyRatObjParser(object):
       this = np.array(cmd[1:3]).astype(int)
       this[this<0] += self.nPoints
       self.infinitePlane.append(\
-           PyRatPlane(self.point[this[1]],self.point[this[0]],\
+           PyRatPlane(self.point[this[1]].copy(),self.point[this[0]].copy(),\
                       material=self.top.material))
       self.verbose == 2 and sys.stderr.write('<plane>')
     except:
@@ -672,7 +690,7 @@ class PyRatObjParser(object):
       this[this<0] += self.nPoints
       radius = float(cmd[3])
       self.top.contents.append(\
-           PyRatDisk(self.point[this[0]],self.point[this[1]],\
+           PyRatDisk(self.point[this[0]].copy(),self.point[this[1]].copy(),\
                      material=self.top.material,info={'radius':radius}))
       self.verbose == 2 and sys.stderr.write('d')
     except:
@@ -695,8 +713,8 @@ class PyRatObjParser(object):
       this = np.array(cmd[1:4]).astype(int)
       this[this<0] += self.nPoints
       self.top.contents.append(\
-           PyRatFacet(np.array([self.point[this[0]],self.point[this[1]],\
-                      self.point[this[2]]]),None,\
+           PyRatFacet(np.array([self.point[this[0]].copy(),self.point[this[1]].copy(),\
+                      self.point[this[2]].copy()]),None,\
                       material=self.top.material))
       self.verbose == 2 and sys.stderr.write('f')
     except:
@@ -715,8 +733,22 @@ class PyRatObjParser(object):
     except:
       pass
 
+def mainGL():
+  '''
+  To test GL 
+  '''
+  from PyRatObjParser import PyRatObjParser
+  from PyRatClone import PyRatClone
+  from PyRatBox import test
+  if len(sys.argv) > 1:
+    filename = sys.argv[1]
+  else:
+    filename = 'tests/clone2.obj'
+    filename = 'tests/new_plant.obj'
+  world = PyRatObjParser(filename,verbose=True,GL=True)
+  mlab.show()
 
-def main():
+def mainR():
   '''
   Test to demonstrate reading an obj file
   and using clones
@@ -727,19 +759,8 @@ def main():
   from PyRatBox import test
   filename = 'tests/clone2.obj'
   filename = 'tests/new_plant.obj'
-  if hasGL:
-    tvtk.Property(representation='wireframe') 
+  hasGL = False
   world = PyRatObjParser(filename,verbose=True,GL=True)
-  if world.GL:
-    if len(world.triangleData):
-      triangleData = np.array(world.triangleData)
-      triangleN = np.array(world.triangleN)
-      mesh = tvtk.PolyData()
-      mesh.points = triangleData
-      mesh.polys = triangleN
-      # add mesh.point_data.scalars = temperature
-      # at some point
-    mlab.show()
   if world.root.size == 0:
     world.error('Zero size in world root')
     return False
@@ -751,5 +772,8 @@ def main():
   return True  
 
 if __name__ == "__main__":
-    main()
+  if hasGL:
+    mainGL()
+  else:
+    mainR()
 

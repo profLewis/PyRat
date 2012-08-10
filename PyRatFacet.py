@@ -79,7 +79,7 @@ class PyRatFacet(PyRatPlane):
     base = tuple(modify(self.base,matrix,offset))
     du = tuple(modify(self.Du,matrix,None))
     dv = tuple(modify(self.Dv,matrix,None))
-    data = np.array([base,base+du,base+dv],'f')
+    data = np.array([base,tuple(np.array(base)+np.array(du)),tuple(np.array(base)+np.array(dv))],'f')
     triangles = np.array([0,1,2]) 
     return data,triangles
 
