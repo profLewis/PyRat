@@ -10,7 +10,7 @@ MAINTAINER = 'P Lewis'
 MAINTAINER_EMAIL = "p.lewis@ucl.ac.uk"
 URL = 'https://github.com/profLewis/PyRat'
 LICENSE = 'Undecided'
-VERSION = "1.0"
+VERSION = "1.1"
 DOWNLOAD_URL="https://github.com/profLewis/PyRat/zipball/master"
 
 setup(name='PyRat',
