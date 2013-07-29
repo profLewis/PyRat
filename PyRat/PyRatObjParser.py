@@ -212,6 +212,7 @@ class PyRatObjParser(object):
     self.dict = {\
       '#':self.comment,\
       '#define':self.define,\
+      '#include':self.include,\
       'box':self.box,\
       '!{':self.openBox,\
       '!}':self.closeBox,\
@@ -542,6 +543,14 @@ class PyRatObjParser(object):
     except:
       self.error('could not interpret "usemtl" line %d of %s: %s'%\
                 (self.lineNumber,self.filename,' '.join(cmd)))
+
+  def include(self,cmd):
+    '''
+    Include another file
+    '''
+    filename = self.filename
+    self.read(cmd[-1])
+    self.filename = filename
 
   def read(self,filename):
     '''
