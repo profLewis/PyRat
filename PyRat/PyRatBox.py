@@ -797,7 +797,7 @@ def test(base,tip,obj=None,name=None,type=None,file=None,info={},nAtTime=200):
   import os
   import pylab as plt
 
-  type = type or str(globals()['__file__'].split('.')[0])
+  type = type or str(globals()['__file__'].split(os.sep())[-1].split('.')[0])
   if 'verbose' in info:
     sys.stderr.write('Object: %s\n'%type)
   type = type.split('/')[-1]
