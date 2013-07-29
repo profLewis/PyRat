@@ -765,7 +765,10 @@ class PyRatBox(object):
     else:
       return False,ray,np.array([0,0,1.])  
 
-def test(base,tip,obj=None,name=None,type=None,file=None,info={},nAtTime=200):
+def test(base,tip,dimensions=None,\
+        size=(200,200),sun=[10,-10,20.],direction=[-1,-1.,-1],\
+        origin=None,focalPoint=None,\
+        obj=None,name=None,type=None,file=None,info={},nAtTime=200):
   '''
   A simple test of the intersection algorithm
  
@@ -806,17 +809,19 @@ def test(base,tip,obj=None,name=None,type=None,file=None,info={},nAtTime=200):
   name = name or type[5:]
   obj = obj or eval('%s(base,tip,info=info)'%type)
   # ray direction
-  direction = np.array([-1,-1.,-1])
+  direction = np.array(direction)
   direction /= sqrt(dot(direction,direction))
  
-  origin = -direction * 6.0 
-  focalPoint = origin*1.5
+  if origin == None:
+    origin = -direction * 6.0
+  if focalPoint == None:
+    focalPoint = origin*1.5
   # sun direction
-  sun = np.array([10,-10,20.])
+  sun = np.array(sun)
   sun /= sqrt(dot(sun,sun))
 
   # image size
-  size = (200,200)
+  #size = (200,200)
 
   # ray origins
   #origin = np.array([0,0,4]).astype(float)
@@ -824,7 +829,8 @@ def test(base,tip,obj=None,name=None,type=None,file=None,info={},nAtTime=200):
   ray = PyRatRay(o,direction)
 
   # dimensions of the image in physical units
-  dimensions = [2,2]
+  if dimensions == None:
+      dimensions = [2,2]
 
   result0 = np.zeros(size)
   result1 = np.zeros(size)
@@ -832,7 +838,10 @@ def test(base,tip,obj=None,name=None,type=None,file=None,info={},nAtTime=200):
   sys.stderr.write('from %s in direction %s\n'%(str(origin),str(direction)))
   sys.stderr.write('Name: %s\n'%name)
   if len(sys.argv) > 1:
-    ncpus = int(sys.argv[1])
+    try:
+        ncpus = int(sys.argv[1])
+    except:
+        ncpus = -1
   else:
     ncpus = -1
  
@@ -894,7 +903,7 @@ def test(base,tip,obj=None,name=None,type=None,file=None,info={},nAtTime=200):
             ix = iix[j]
             iy = iiy[j]
             ray = val[1]
-            n = val[2]
+            n = val[2]/np.dot(val[2],val[2])
             lambert = dot(n,sun)
             if lambert < 0: lambert = 0
             result0[size[0]-1-ix,size[1]-1-iy] = lambert
