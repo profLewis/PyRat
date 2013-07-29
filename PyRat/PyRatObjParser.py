@@ -766,8 +766,14 @@ def mainR():
   from PyRatObjParser import PyRatObjParser
   from PyRatClone import PyRatClone
   from PyRatBox import test
-  filename = 'tests/clone2.obj'
-  filename = 'tests/new_plant.obj'
+  import sys
+  
+  if len(sys.argv) > 1:
+    filename = sys.argv[1]
+  else:
+    filename = 'tests/clone2.obj'
+    filename = 'tests/new_plant.obj'
+    
   hasGL = False
   world = PyRatObjParser(filename,verbose=True,GL=True)
   if world.root.size == 0:
