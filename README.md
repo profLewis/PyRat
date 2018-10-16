@@ -7,3 +7,5 @@ Author: P. Lewis, UCL
 p.lewis@ucl.ac.uk
 
 see: librat wiki <https://librat.wikispaces.com/>
+
+Python 3.6+
